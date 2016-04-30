@@ -14,7 +14,7 @@ def hc(args):
     return proc.stdout.read().decode("utf-8")
 
 def spawn_bar(geometry = None):
-    lemonbar_args = [ ]
+    lemonbar_args = '-u 2 -B #ee121212 -f -*-fixed-medium-*-*-*-12-*-*-*-*-*-*-*'.split(' ')
     command = [ "lemonbar" ]
     if geometry:
         (x,y,w,h) = geometry
@@ -30,24 +30,24 @@ def spawn_hc_idle():
     cmd = [ 'herbstclient', '--idle' ]
     return subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
-widget_nr = 0
 class Widget:
     def __init__(self):
         self.interval = None
         self.timeout = None
         self.buttons = [ ]
-        global widget_nr
-        widget_nr += 1
-        self.click_id = 'widget' + str(widget_nr)
+        self.click_id = 'w' + str(id(self))
+        self.pad_left = ''
+        self.pad_right = ''
     def timeout(self):
         pass
     def render(self):
         begin = ''
-        end = ''
+        end = self.pad_right
         for b in self.buttons:
             clickname = self.click_id + '_' + str(b)
             begin += '%%{A%d:%s:}' % (b,clickname)
             end += '%{A}'
+        begin += self.pad_left
         return begin + self.content() + end
     def content(self):
         return 'widget'
@@ -55,8 +55,24 @@ class Widget:
         if click_id == self.click_id:
             self.on_click(btn)
             return True
+        else:
+            return False
     def on_click(self, button):
         pass
+
+class RawLabel(Widget):
+    def __init__(self,label):
+        super(RawLabel,self).__init__()
+        self.label = label
+    def render(self):
+        return self.label
+
+class Label(Widget):
+    def __init__(self,label):
+        super(Label,self).__init__()
+        self.label = label
+    def content(self):
+        return self.label
 
 class Button(Widget):
     def __init__(self,label):
@@ -65,10 +81,100 @@ class Button(Widget):
         self.pad_left = ' '
         self.pad_right = ' '
         self.buttons = [ 1 ]
+        self.callback = None
     def content(self):
-        return self.pad_left + self.label + self.pad_right
+        return self.label
     def on_click(self, button):
-        print("click %d!" % button)
+        #print("btn %d" % button)
+        if self.callback:
+            self.callback(button)
+
+activecolor = hc('attr theme.tiling.active.color'.split(' '))
+emphbg = '#303030'
+
+class HLWMTags(Widget):
+    def __init__(self):
+        super(HLWMTags,self).__init__()
+        self.needs_update = True
+        self.tags = [ ]
+        self.tag_count = 0
+        self.buttons = [4, 5]
+        self.pad_right = '%{F-}%{B-}%{-o}'
+        self.update_tags()
+
+    def update_tags(self):
+        global monitor
+        strlist = hc(['tag_status', str(monitor)]).strip('\t').split('\t')
+        self.tag_count = len(strlist)
+        # enlarge the tag button array
+        for i in range(len(self.tags),len(strlist)):
+            btn = Button(str(i))
+            btn.callback = (lambda j: lambda b: self.tag_clicked(j, b))(i)
+            self.tags.append(btn)
+        # update names and formatting
+        for i in range(0, self.tag_count):
+            occupied = True
+            focused = False
+            here = False
+            urgent = False
+            visible = True
+            ch = strlist[i][0]
+            self.tags[i].empty = False
+            if ch == '.':
+                occupied = False
+                visible = False
+                self.tags[i].empty = True
+            elif ch == '#':
+                focused = True
+                here = True
+            elif ch == '%':
+                focused = True
+            elif ch == '+':
+                here = True
+            elif ch == '!':
+                urgent = True
+            elif ch == ':':
+                visible = False
+            else:
+                print("Unknown hlwm tag modifier >%s<" % ch)
+            form = ''
+            form += '%{B' + emphbg + '}' if here else '%{B-}'
+            form += '%{+o}' if visible else '%{-o}'
+            form += '%{F-}' if occupied else '%{F#909090}'
+            form += '%{B#eeD6156C}%{-o}' if urgent else ''
+            form += ('%{Fwhite}%{U' + activecolor + '}' ) if focused else '%{U#454545}'
+            self.tags[i].pad_left = form + ' '
+            self.tags[i].label = strlist[i][1:]
+        self.needs_update = False
+    def tag_clicked(self,tagindex,button):
+        cmd = 'chain , focus_monitor %d , use_index %d' % (monitor,tagindex)
+        cmd = cmd.split(' ')
+        #print(cmd)
+        hc(cmd)
+    def content(self):
+        text = ''
+        for t in self.tags:
+            if t.empty:
+                continue
+            text += t.render()
+        return text
+    def can_handle_input(self, click_id, btn):
+        if super(HLWMTags,self).can_handle_input(click_id,btn):
+            return True
+        else:
+            for t in self.tags:
+                if t.can_handle_input(click_id,btn):
+                    return True
+            return False
+        return False
+    def on_click(self, b):
+        cmd = 'chain , focus_monitor %d , use_index %+d --skip-visible'
+        if b == 4:
+            delta = -1
+        else:
+            delta = +1
+        cmd = (cmd % (monitor,delta)).split(' ')
+        hc(cmd)
 
 class BarEventReader:
     def fileno(self):
@@ -84,6 +190,7 @@ class BarEventReader:
                 if w.can_handle_input(name, btn):
                     break
 
+hlwm_hooks = { }
 
 class HLWMEventReader:
     def fileno(self):
@@ -91,10 +198,28 @@ class HLWMEventReader:
     def handle_input(self):
         line = hc_idle.stdout.readline().decode('utf-8').rstrip('\n')
         args = line.split('\t')
-        print('event: ' + ' , '.join(args))
+        #print('event: ' + ' , '.join(args))
+        if len(args) == 0:
+            return
+        if args[0] in hlwm_hooks:
+            hlwm_hooks[args[0]](args[1:])
+
+# some more example widgets:
+class Counter(Button):
+    def __init__(self):
+        super(Counter,self).__init__('x')
+        self.c = 0
+    def on_click(self,btn):
+        self.c += 1
+        self.c %= 5
+    def content(self):
+        return ('c=%d' % self.c)
 
 # ---- configuration ---
-monitor = 0
+if len(sys.argv) >= 2:
+    monitor = int(sys.argv[1])
+else:
+    monitor = 0
 geometry = hc(['monitor_rect', str(monitor)]).split(' ')
 x = int(geometry[0])
 y = int(geometry[1])
@@ -104,24 +229,51 @@ height = 16
 
 bar = spawn_bar(geometry = (x,y,monitor_w,height))
 hc_idle = spawn_hc_idle()
-widgets = [ Button('click me') ]
+
+# widgets
+hlwm_windowtitle = Label('')
+def update_window_title(args):
+    hlwm_windowtitle.label = args[1]
+hlwm_hooks['focus_changed'] = update_window_title
+hlwm_hooks['window_title_changed'] = update_window_title
+
+hlwm_tags = HLWMTags()
+def update_tags(args):
+    hlwm_tags.update_tags()
+hlwm_hooks['tag_changed'] = update_tags
+hlwm_hooks['tag_flags'] = update_tags
+hlwm_hooks['tag_added'] = update_tags
+hlwm_hooks['tag_removed'] = update_tags
+
+
+widgets = [ RawLabel('%{l}'),
+            hlwm_tags,
+            Counter(),
+            RawLabel('%{c}'),
+            hlwm_windowtitle,
+]
 inputs = [ BarEventReader(), HLWMEventReader() ]
 
+global_update = True
 
 # main loop
 while bar.pid != None:
-    text = ''
-    for w in widgets:
-        text += w.render()
-    text += '\n'
-    bar.stdin.write(text.encode('utf-8'))
-    bar.stdin.flush()
+    if global_update:
+        text = ''
+        for w in widgets:
+            text += w.render()
+        text += '\n'
+        #print(text, end='')
+        bar.stdin.write(text.encode('utf-8'))
+        bar.stdin.flush()
+        global_update = False
     # wait for new data
-    (ready,_,_) = select.select(inputs,[],[], 1)
+    (ready,_,_) = select.select(inputs,[],[], 18)
     if not ready:
         print('timeout!')
     else:
         for x in ready:
             x.handle_input()
+            global_update = True
 bar.wait()
 
