@@ -4,6 +4,7 @@ import subprocess
 import time # only for sleep()
 import sys
 import select
+import os
 
 
 def hc(args):
@@ -137,6 +138,8 @@ class HLWMTags(Widget):
                 visible = False
             else:
                 print("Unknown hlwm tag modifier >%s<" % ch)
+            #if here:
+            #    print('tag:        %s' %strlist[i][1:])
             form = ''
             form += '%{B' + emphbg + '}' if here else '%{B-}'
             form += '%{+o}' if visible else '%{-o}'
@@ -176,33 +179,54 @@ class HLWMTags(Widget):
         cmd = (cmd % (monitor,delta)).split(' ')
         hc(cmd)
 
-class BarEventReader:
+
+class LineReader(object):
+    # thanks to http://stackoverflow.com/questions/5486717/python-select-doesnt-signal-all-input-from-pipe
+    def __init__(self, fd, callback):
+        # read all available lines from fd and call
+        # the callback for each complete line
+        self._fd = fd
+        self._buf = ''
+        self.callback = callback
     def fileno(self):
-        return bar.stdout.fileno()
-    def handle_input(self):
-        line = bar.stdout.readline().decode('utf-8').split('_')
-        if len(line) != 2:
-            print("invalid event name: %s" % '_'.join(line))
-        else:
-            name = line[0]
-            btn = int(line[1])
-            for w in widgets:
-                if w.can_handle_input(name, btn):
-                    break
+        return self._fd
+    def readlines(self):
+        data = os.read(self._fd, 4096).decode('utf-8')
+        if not data:
+            # EOF
+            return None
+        self._buf += data
+        if '\n' not in data:
+            return []
+        tmp = self._buf.split('\n')
+        lines, self._buf = tmp[:-1], tmp[-1]
+        return lines
+    def handle_lines(self):
+        for line in self.readlines():
+            self.callback(line)
+
+def bar_handle_input(line):
+    line = line.split('_')
+    if len(line) != 2:
+        print("invalid event name: %s" % '_'.join(line))
+    else:
+        #print("bar event: %s" % '_'.join(line))
+        name = line[0]
+        btn = int(line[1])
+        for w in widgets:
+            if w.can_handle_input(name, btn):
+                break
 
 hlwm_hooks = { }
 
-class HLWMEventReader:
-    def fileno(self):
-        return hc_idle.stdout.fileno()
-    def handle_input(self):
-        line = hc_idle.stdout.readline().decode('utf-8').rstrip('\n')
-        args = line.split('\t')
-        #print('event: ' + ' , '.join(args))
-        if len(args) == 0:
-            return
-        if args[0] in hlwm_hooks:
-            hlwm_hooks[args[0]](args[1:])
+def hlwm_handle_input(line):
+    args = line.split('\t')
+    #print('event: ' + ' , '.join(args))
+    if len(args) == 0:
+        return
+    if args[0] in hlwm_hooks:
+        #print("hlwm event: %s" % line)
+        hlwm_hooks[args[0]](args[1:])
 
 # some more example widgets:
 class Counter(Button):
@@ -231,9 +255,12 @@ bar = spawn_bar(geometry = (x,y,monitor_w,height))
 hc_idle = spawn_hc_idle()
 
 # widgets
-hlwm_windowtitle = Label('')
+hlwm_windowtitle = Label(hc(['attr', 'clients.focus.title']))
 def update_window_title(args):
-    hlwm_windowtitle.label = args[1]
+    if len(args) >= 2:
+        hlwm_windowtitle.label = args[1]
+    else:
+        hlwm_windowtitle.label = ''
 hlwm_hooks['focus_changed'] = update_window_title
 hlwm_hooks['window_title_changed'] = update_window_title
 
@@ -245,14 +272,21 @@ hlwm_hooks['tag_flags'] = update_tags
 hlwm_hooks['tag_added'] = update_tags
 hlwm_hooks['tag_removed'] = update_tags
 
-
 widgets = [ RawLabel('%{l}'),
             hlwm_tags,
             Counter(),
             RawLabel('%{c}'),
             hlwm_windowtitle,
 ]
-inputs = [ BarEventReader(), HLWMEventReader() ]
+inputs = [ LineReader(bar.stdout.fileno(), bar_handle_input),
+           LineReader(hc_idle.stdout.fileno(), hlwm_handle_input),
+         ]
+
+def nice_theme(widget):
+    widget.pad_left  = '%{-o}%{U' + activecolor + '}%{B' + emphbg + '} '
+    widget.pad_right = ' %{-o}%{B-}'
+
+nice_theme(hlwm_windowtitle)
 
 global_update = True
 
@@ -273,7 +307,7 @@ while bar.pid != None:
         print('timeout!')
     else:
         for x in ready:
-            x.handle_input()
+            x.handle_lines()
             global_update = True
 bar.wait()
 
