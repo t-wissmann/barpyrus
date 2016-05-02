@@ -86,7 +86,7 @@ class Label(Widget):
         super(Label,self).__init__()
         self.label = label
     def content(self):
-        return self.label
+        return self.label.replace('%', '%%')
 
 class Button(Widget):
     def __init__(self,label):
@@ -302,7 +302,7 @@ time_widget = DateTime()
 
 widgets = [ RawLabel('%{l}'),
             hlwm_tags,
-            Counter(),
+            #Counter(),
             RawLabel('%{c}'),
             hlwm_windowtitle,
             RawLabel('%{r}'),
