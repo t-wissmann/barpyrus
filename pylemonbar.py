@@ -6,6 +6,7 @@ import sys
 import select
 import os
 import math
+import struct
 
 
 def hc(args):
@@ -31,6 +32,51 @@ def spawn_bar(geometry = None):
 def spawn_hc_idle():
     cmd = [ 'herbstclient', '--idle' ]
     return subprocess.Popen(cmd, stdout=subprocess.PIPE)
+
+def get_mouse_location():
+    cmd = 'xdotool getmouselocation'.split(' ')
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    proc.wait()
+    lines = proc.stdout.read().decode("utf-8").split(' ')
+    x = int(lines[0].replace('x:', '', 1))
+    y = int(lines[1].replace('y:', '', 1))
+    return (x,y)
+
+class DropdownRofi:
+    def __init__(self, y, x, panel_width, direction_down = True):
+        self.y = y
+        self.x = x
+        self.panel_width = panel_width
+        self.direction_down = direction_down
+        self.rofi_args = [ ]
+        self.default_width = 40
+    def spawn(self, lines, additional_args = [ '-p', ''], width = None):
+        (mouse_x, mouse_y) = get_mouse_location()
+        if not width:
+            width = 100 # some default width
+        width = max(width, 101) # width has to be 100 at least (rofi restriction)
+        # first, compute the top left corner of the menu
+        menu_x = min(max(mouse_x - width/2, self.x), self.x + self.panel_width - width)
+        menu_y = self.y
+        # then, specify these coordinates relative to the mouse cursor
+        menu_x -= mouse_x
+        menu_y -= mouse_y
+        # compile rofi arguments
+        cmd = ['rofi', '-dmenu', '-sep' , '\\0' ]
+        cmd += ['-monitor', '-3' ] # position relative to mouse cursor
+        cmd += ['-layout', '1' ] # specify top left corner of the menu
+        cmd += ['-width', str(width) ]
+        cmd += ['-xoffset', str(menu_x), '-yoffset', str(menu_y) ]
+        cmd += self.rofi_args
+        cmd += additional_args
+        rofi = subprocess.Popen(cmd,stdout=subprocess.PIPE,stdin=subprocess.PIPE)
+        for i in lines:
+            rofi.stdin.write(i.encode('utf-8'))
+            rofi.stdin.write(struct.pack('B', 0))
+        rofi.stdin.close()
+        rofi.wait()
+
+
 
 class Widget:
     def __init__(self):
@@ -275,9 +321,10 @@ x = int(geometry[0])
 y = int(geometry[1])
 monitor_w = int(geometry[2])
 monitor_h = int(geometry[3])
+width = monitor_w
 height = 16
 
-bar = spawn_bar(geometry = (x,y,monitor_w,height))
+bar = spawn_bar(geometry = (x,y,width,height))
 hc_idle = spawn_hc_idle()
 
 # widgets
@@ -289,6 +336,14 @@ def update_window_title(args):
         hlwm_windowtitle.label = ''
 hlwm_hooks['focus_changed'] = update_window_title
 hlwm_hooks['window_title_changed'] = update_window_title
+
+rofi = DropdownRofi(y+height,x,width)
+
+def session_menu(btn):
+    rofi.spawn(['Switch User', 'Suspend', 'Logout'])
+
+session_button = Button('V')
+session_button.callback = session_menu
 
 hlwm_tags = HLWMTags()
 def update_tags(args):
@@ -306,6 +361,7 @@ widgets = [ RawLabel('%{l}'),
             RawLabel('%{c}'),
             hlwm_windowtitle,
             RawLabel('%{r}'),
+            session_button,
             time_widget,
 ]
 inputs = [ LineReader(bar.stdout.fileno(), bar_handle_input),
