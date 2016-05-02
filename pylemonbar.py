@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 import subprocess
-import time # only for sleep()
+import time
 import sys
 import select
 import os
+import math
 
 
 def hc(args):
@@ -33,14 +34,26 @@ def spawn_hc_idle():
 
 class Widget:
     def __init__(self):
-        self.interval = None
-        self.timeout = None
+        self.timer_interval = None
         self.buttons = [ ]
         self.click_id = 'w' + str(id(self))
         self.pad_left = ''
         self.pad_right = ''
+        self.last_timeout = 0.0 # timestamp of the last timeout
     def timeout(self):
-        pass
+        return False
+    def next_timeout(self):
+        if self.timer_interval:
+            return self.last_timeout + self.timer_interval
+        else:
+            return math.inf
+    def maybe_timeout(self, now):
+        if not self.timer_interval:
+            return False
+        if self.last_timeout + self.timer_interval <= now:
+            self.last_timeout = now
+            return self.timeout()
+        return False
     def render(self):
         begin = ''
         end = self.pad_right
@@ -89,6 +102,19 @@ class Button(Widget):
         #print("btn %d" % button)
         if self.callback:
             self.callback(button)
+
+class DateTime(Label):
+    def __init__(self,time_format = '%H:%M, %Y-%m-%d'):
+        super(DateTime,self).__init__('')
+        self.timer_interval = 1
+        self.time_format = time_format
+        self.last_time = ''
+        self.timeout()
+    def timeout(self):
+        self.label = time.strftime(self.time_format)
+        if_changed = (self.label != self.last_time)
+        self.last_time = self.label
+        return if_changed
 
 activecolor = hc('attr theme.tiling.active.color'.split(' '))
 emphbg = '#303030'
@@ -272,11 +298,15 @@ hlwm_hooks['tag_flags'] = update_tags
 hlwm_hooks['tag_added'] = update_tags
 hlwm_hooks['tag_removed'] = update_tags
 
+time_widget = DateTime()
+
 widgets = [ RawLabel('%{l}'),
             hlwm_tags,
             Counter(),
             RawLabel('%{c}'),
             hlwm_windowtitle,
+            RawLabel('%{r}'),
+            time_widget,
 ]
 inputs = [ LineReader(bar.stdout.fileno(), bar_handle_input),
            LineReader(hc_idle.stdout.fileno(), hlwm_handle_input),
@@ -287,11 +317,16 @@ def nice_theme(widget):
     widget.pad_right = ' %{-o}%{B-}'
 
 nice_theme(hlwm_windowtitle)
+nice_theme(time_widget)
 
 global_update = True
 
 # main loop
 while bar.pid != None:
+    now = time.clock_gettime(time.CLOCK_MONOTONIC)
+    for w in widgets:
+        if w.maybe_timeout(now):
+            global_update = True
     if global_update:
         text = ''
         for w in widgets:
@@ -302,9 +337,19 @@ while bar.pid != None:
         bar.stdin.flush()
         global_update = False
     # wait for new data
-    (ready,_,_) = select.select(inputs,[],[], 18)
+    next_timeout = math.inf
+    for w in widgets:
+        next_timeout = min(next_timeout, w.next_timeout())
+    now = time.clock_gettime(time.CLOCK_MONOTONIC)
+    next_timeout -= now
+    next_timeout = max(next_timeout,0.1)
+    #print("next timeout = " + str(next_timeout))
+    if next_timeout != math.inf:
+        ready = select.select(inputs,[],[], next_timeout)[0]
+    else:
+        ready = select.select(inputs,[],[], 18)[0]
     if not ready:
-        print('timeout!')
+        pass #print('timeout!')
     else:
         for x in ready:
             x.handle_lines()
