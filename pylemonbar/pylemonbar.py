@@ -11,6 +11,7 @@ import struct
 from pylemonbar.core import *
 from pylemonbar.hlwm import *
 from pylemonbar.widgets import *
+from pylemonbar.conky import ConkyWidget
 
 def main(argv):
     # ---- configuration ---
@@ -40,6 +41,12 @@ def main(argv):
 
     time_widget = DateTime()
     hlwm_windowtitle = HLWMWindowTitle(hc_idle)
+    xkblayouts = [
+        'us us -variant altgr-intl us'.split(' '),
+        'de de de'.split(' '),
+    ]
+    setxkbmap = 'setxkbmap -option compose:menu -option ctrl:nocaps'
+    setxkbmap += ' -option compose:ralt -option compose:rctrl'
 
     bar.widgets = [ RawLabel('%{l}'),
                 HLWMTags(hc_idle, monitor),
@@ -47,6 +54,9 @@ def main(argv):
                 RawLabel('%{c}'),
                 hlwm_windowtitle,
                 RawLabel('%{r}'),
+                ConkyWidget('${battery_percent} '),
+                HLWMLayoutSwitcher(hc_idle, xkblayouts, command = setxkbmap.split(' ')),
+                RawLabel(' '),
                 time_widget,
     ]
 
@@ -54,7 +64,10 @@ def main(argv):
                bar
              ]
 
-    procwatch = [ ]
+    for w in bar.widgets:
+        inp = w.eventinput()
+        if inp != None:
+            inputs.append(inp)
 
     def nice_theme(widget):
         widget.pad_left  = '%{-o}%{B#303030} '

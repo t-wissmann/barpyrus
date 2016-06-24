@@ -34,7 +34,7 @@ class EventInput:
             self.handle_line(line)
     def is_running(self):
         return self.proc.pid != None
-    def handle_line(self):
+    def handle_line(self,line):
         if self.callback != None:
             self.callback(line)
     def write_flushed(self, text):

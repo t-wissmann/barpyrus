@@ -10,6 +10,7 @@ import struct
 from pylemonbar.widgets import Widget
 from pylemonbar.widgets import Label
 from pylemonbar.widgets import Button
+from pylemonbar.widgets import Switcher
 from pylemonbar.core import EventInput
 
 def hc(args):
@@ -136,3 +137,26 @@ class HLWMWindowTitle(Label):
             self.label = args[1]
         else:
             self.label = ''
+
+class HLWMLayoutSwitcher(Switcher):
+    def __init__(self, hlwm, layouts, command = [ 'setxkbmap' ]):
+        # layouts is a list of layout specifications
+        # a layout specification is a list containing:
+        # [ some internal name, displayed identifier, xkbmap arguments...]
+        self.layouts = layouts
+        self.command = command
+        self.titles = [ l[1] for l in layouts ]
+        super(HLWMLayoutSwitcher,self).__init__(self.titles)
+        hlwm.enhook('keyboard_layout', (lambda a: self.layoutswitched(a)))
+    def choice_clicked(self,idx):
+        l = self.layouts[idx]
+        hc(['emit_hook', 'keyboard_layout', l[0]])
+        cmd = []
+        cmd += self.command
+        cmd += l[2:]
+        subprocess.Popen(cmd)
+    def layoutswitched(self,args):
+        for idx, l in enumerate(self.layouts):
+            if args[0] == l[0]:
+                self.selection = idx
+

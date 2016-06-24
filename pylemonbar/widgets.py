@@ -18,6 +18,8 @@ class Widget:
         self.last_timeout = 0.0 # timestamp of the last timeout
     def timeout(self):
         return False
+    def eventinput(self):
+        return None
     def next_timeout(self):
         if self.timer_interval:
             return self.last_timeout + self.timer_interval
@@ -91,4 +93,37 @@ class DateTime(Label):
         if_changed = (self.label != self.last_time)
         self.last_time = self.label
         return if_changed
+
+class Switcher(Widget):
+    def __init__(self,choices,selection=0):
+        super(Switcher,self).__init__()
+        self.buttons = [ Button(x) for x in choices ]
+        for i,btn in enumerate(self.buttons):
+            btn.callback = (lambda j: lambda buttonnr: self.choice_clicked(j))(i)
+        self.normalbg = '#303030'
+        self.normalfg = 'white'
+        self.focusfg = 'black'
+        self.focusbg = '#9fbc00'
+        self.selection = selection
+    def choice_clicked(self, idx):
+        self.selection = idx
+    def render(self):
+        buf = self.pad_left
+        buf += '%{B' + self.normalbg + '}%{+o}%{+u}%{U' + self.normalbg + '} '
+        for i, btn in enumerate(self.buttons):
+            if i == self.selection:
+                buf += '%%{B%s}%%{F%s}' % (self.focusbg, self.focusfg)
+            buf += btn.render()
+            if i == self.selection:
+                buf += '%%{B%s}%%{F%s}' % (self.normalbg, self.normalfg)
+        buf += ' %{B-}%{-o}%{-u}%{F-}'
+        buf += self.pad_right
+        return buf
+    def can_handle_input(self, click_id, btn):
+        if super(Switcher,self).can_handle_input(click_id, btn):
+            return True
+        for btn in self.buttons:
+            if btn.can_handle_input(click_id, btn):
+                return True
+        return False
 
