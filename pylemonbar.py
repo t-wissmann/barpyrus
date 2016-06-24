@@ -16,22 +16,75 @@ def hc(args):
     proc.wait()
     return proc.stdout.read().decode("utf-8")
 
-def spawn_bar(geometry = None):
-    lemonbar_args = '-u 2 -B #ee121212 -f -*-fixed-medium-*-*-*-12-*-*-*-*-*-*-*'.split(' ')
-    command = [ "lemonbar" ]
-    if geometry:
-        (x,y,w,h) = geometry
-        command += [ '-g', "%dx%d%+d%+d" % (w,h,x,y)  ]
-    command += lemonbar_args
-    (x,y,w,h)
-    lemonbar = subprocess.Popen(command,
-                                stdout=subprocess.PIPE,
-                                stdin=subprocess.PIPE)
-    return lemonbar
+class EventInput:
+    def __init__(self, command):
+        self.command = command
+        self.proc = subprocess.Popen(command, stdout=subprocess.PIPE,
+                                              stdin=subprocess.PIPE)
+        self._buf = ''
+        self.callback = None;
+    def fileno(self):
+        return self.proc.stdout.fileno()
+    # thanks to http://stackoverflow.com/questions/5486717/python-select-doesnt-signal-all-input-from-pipe
+    def readlines(self):
+        data = os.read(self.proc.stdout.fileno(), 4096).decode('utf-8')
+        if not data:
+            # EOF
+            return None
+        self._buf += data
+        if '\n' not in data:
+            return []
+        tmp = self._buf.split('\n')
+        lines, self._buf = tmp[:-1], tmp[-1]
+        return lines
+    def process(self):
+        for line in self.readlines():
+            self.handle_line(line)
+    def is_running(self):
+        return self.proc.pid != None
+    def handle_line(self):
+        if self.callback != None:
+            self.callback(line)
+    def write_flushed(self, text):
+        self.proc.stdin.write(text.encode('utf-8'))
+        self.proc.stdin.flush()
 
-def spawn_hc_idle():
-    cmd = [ 'herbstclient', '--idle' ]
-    return subprocess.Popen(cmd, stdout=subprocess.PIPE)
+class HLWMInput(EventInput):
+    def __init__(self):
+        cmd = [ 'herbstclient', '--idle' ]
+        self.hooks = { }
+        super(HLWMInput,self).__init__(cmd)
+    def enhook(self,name,callback):
+        self.hooks.setdefault(name,[]).append(callback)
+    def handle_line(self,line):
+        args = line.split('\t')
+        if len(args) == 0:
+            return
+        if args[0] in self.hooks:
+            for cb in self.hooks[args[0]]:
+                cb(args[1:])
+
+class Lemonbar(EventInput):
+    def __init__(self, geometry = None):
+        command = [ "lemonbar" ]
+        if geometry:
+            (x,y,w,h) = geometry
+            command += [ '-g', "%dx%d%+d%+d" % (w,h,x,y)  ]
+        command += '-u 2 -B #ee121212 -f -*-fixed-medium-*-*-*-12-*-*-*-*-*-*-*'.split(' ')
+        super(Lemonbar,self).__init__(command)
+        self.widgets = None
+
+    def handle_line(self,line):
+        line = line.split('_')
+        if len(line) != 2:
+            print("invalid event name: %s" % '_'.join(line))
+        else:
+            name = line[0]
+            btn = int(line[1])
+            for w in self.widgets:
+                if w.can_handle_input(name, btn):
+                    break
+
 
 def get_mouse_location():
     cmd = 'xdotool getmouselocation'.split(' ')
@@ -75,8 +128,6 @@ class DropdownRofi:
             rofi.stdin.write(struct.pack('B', 0))
         rofi.stdin.close()
         rofi.wait()
-
-
 
 class Widget:
     def __init__(self):
@@ -166,7 +217,7 @@ activecolor = hc('attr theme.tiling.active.color'.split(' '))
 emphbg = '#303030'
 
 class HLWMTags(Widget):
-    def __init__(self):
+    def __init__(self,hlwm):
         super(HLWMTags,self).__init__()
         self.needs_update = True
         self.tags = [ ]
@@ -174,8 +225,12 @@ class HLWMTags(Widget):
         self.buttons = [4, 5]
         self.pad_right = '%{F-}%{B-}%{-o}'
         self.update_tags()
+        hlwm.enhook('tag_changed', lambda a: self.update_tags(args = a))
+        hlwm.enhook('tag_flags', lambda a: self.update_tags(args = a))
+        hlwm.enhook('tag_added', lambda a: self.update_tags(args = a))
+        hlwm.enhook('tag_removed', lambda a: self.update_tags(args = a))
 
-    def update_tags(self):
+    def update_tags(self, args = None):
         global monitor
         strlist = hc(['tag_status', str(monitor)]).strip('\t').split('\t')
         self.tag_count = len(strlist)
@@ -251,65 +306,16 @@ class HLWMTags(Widget):
         cmd = (cmd % (monitor,delta)).split(' ')
         hc(cmd)
 
-
-class LineReader(object):
-    # thanks to http://stackoverflow.com/questions/5486717/python-select-doesnt-signal-all-input-from-pipe
-    def __init__(self, fd, callback):
-        # read all available lines from fd and call
-        # the callback for each complete line
-        self._fd = fd
-        self._buf = ''
-        self.callback = callback
-    def fileno(self):
-        return self._fd
-    def readlines(self):
-        data = os.read(self._fd, 4096).decode('utf-8')
-        if not data:
-            # EOF
-            return None
-        self._buf += data
-        if '\n' not in data:
-            return []
-        tmp = self._buf.split('\n')
-        lines, self._buf = tmp[:-1], tmp[-1]
-        return lines
-    def handle_lines(self):
-        for line in self.readlines():
-            self.callback(line)
-
-def bar_handle_input(line):
-    line = line.split('_')
-    if len(line) != 2:
-        print("invalid event name: %s" % '_'.join(line))
-    else:
-        #print("bar event: %s" % '_'.join(line))
-        name = line[0]
-        btn = int(line[1])
-        for w in widgets:
-            if w.can_handle_input(name, btn):
-                break
-
-hlwm_hooks = { }
-
-def hlwm_handle_input(line):
-    args = line.split('\t')
-    #print('event: ' + ' , '.join(args))
-    if len(args) == 0:
-        return
-    if args[0] in hlwm_hooks:
-        #print("hlwm event: %s" % line)
-        hlwm_hooks[args[0]](args[1:])
-
-# some more example widgets:
-class Counter(Button):
-    def __init__(self):
-        super(Counter,self).__init__('x')
-        self.c = 0
-    def on_click(self,btn):
-        self.c += 1
-        self.c %= 5
-    def content(self):
-        return ('c=%d' % self.c)
+class HLWMWindowTitle(Label):
+    def __init__(self, hlwm):
+        super(HLWMWindowTitle,self).__init__(hc(['attr', 'clients.focus.title']))
+        hlwm.enhook('focus_changed', (lambda a: self.newtitle(a)))
+        hlwm.enhook('window_title_changed', (lambda a: self.newtitle(a)))
+    def newtitle(self,args):
+        if len(args) >= 2:
+            self.label = args[1]
+        else:
+            self.label = ''
 
 # ---- configuration ---
 if len(sys.argv) >= 2:
@@ -324,49 +330,35 @@ monitor_h = int(geometry[3])
 width = monitor_w
 height = 16
 
-bar = spawn_bar(geometry = (x,y,width,height))
-hc_idle = spawn_hc_idle()
+bar = Lemonbar(geometry = (x,y,width,height))
+hc_idle = HLWMInput()
 
 # widgets
-hlwm_windowtitle = Label(hc(['attr', 'clients.focus.title']))
-def update_window_title(args):
-    if len(args) >= 2:
-        hlwm_windowtitle.label = args[1]
-    else:
-        hlwm_windowtitle.label = ''
-hlwm_hooks['focus_changed'] = update_window_title
-hlwm_hooks['window_title_changed'] = update_window_title
-
-rofi = DropdownRofi(y+height,x,width)
-
-def session_menu(btn):
-    rofi.spawn(['Switch User', 'Suspend', 'Logout'])
-
-session_button = Button('V')
-session_button.callback = session_menu
-
-hlwm_tags = HLWMTags()
-def update_tags(args):
-    hlwm_tags.update_tags()
-hlwm_hooks['tag_changed'] = update_tags
-hlwm_hooks['tag_flags'] = update_tags
-hlwm_hooks['tag_added'] = update_tags
-hlwm_hooks['tag_removed'] = update_tags
+#rofi = DropdownRofi(y+height,x,width)
+#
+#def session_menu(btn):
+#    rofi.spawn(['Switch User', 'Suspend', 'Logout'])
+#
+#session_button = Button('V')
+#session_button.callback = session_menu
 
 time_widget = DateTime()
+hlwm_windowtitle = HLWMWindowTitle(hc_idle)
 
-widgets = [ RawLabel('%{l}'),
-            hlwm_tags,
+bar.widgets = [ RawLabel('%{l}'),
+            HLWMTags(hc_idle),
             #Counter(),
             RawLabel('%{c}'),
             hlwm_windowtitle,
             RawLabel('%{r}'),
-            session_button,
             time_widget,
 ]
-inputs = [ LineReader(bar.stdout.fileno(), bar_handle_input),
-           LineReader(hc_idle.stdout.fileno(), hlwm_handle_input),
+
+inputs = [ hc_idle,
+           bar
          ]
+
+procwatch = [ ]
 
 def nice_theme(widget):
     widget.pad_left  = '%{-o}%{U' + activecolor + '}%{B' + emphbg + '} '
@@ -378,23 +370,22 @@ nice_theme(time_widget)
 global_update = True
 
 # main loop
-while bar.pid != None:
+while bar.is_running():
     now = time.clock_gettime(time.CLOCK_MONOTONIC)
-    for w in widgets:
+    for w in bar.widgets:
         if w.maybe_timeout(now):
             global_update = True
     if global_update:
         text = ''
-        for w in widgets:
+        for w in bar.widgets:
             text += w.render()
         text += '\n'
         #print(text, end='')
-        bar.stdin.write(text.encode('utf-8'))
-        bar.stdin.flush()
+        bar.write_flushed(text)
         global_update = False
     # wait for new data
     next_timeout = math.inf
-    for w in widgets:
+    for w in bar.widgets:
         next_timeout = min(next_timeout, w.next_timeout())
     now = time.clock_gettime(time.CLOCK_MONOTONIC)
     next_timeout -= now
@@ -408,7 +399,7 @@ while bar.pid != None:
         pass #print('timeout!')
     else:
         for x in ready:
-            x.handle_lines()
+            x.process()
             global_update = True
-bar.wait()
+bar.proc.wait()
 
