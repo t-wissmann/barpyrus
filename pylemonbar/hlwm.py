@@ -134,9 +134,13 @@ class HLWMWindowTitle(Label):
         hlwm.enhook('window_title_changed', (lambda a: self.newtitle(a)))
     def newtitle(self,args):
         if len(args) >= 2:
+            self.pad_left = ' '
+            self.pad_right = ' '
             self.label = args[1]
         else:
             self.label = ''
+            self.pad_left = ''
+            self.pad_right = ''
 
 class HLWMLayoutSwitcher(Switcher):
     def __init__(self, hlwm, layouts, command = [ 'setxkbmap' ]):
