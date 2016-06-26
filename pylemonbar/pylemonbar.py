@@ -6,6 +6,7 @@ import sys
 import select
 import os
 import math
+import signal
 import struct
 
 from pylemonbar.core import *
@@ -26,6 +27,7 @@ def main(argv):
     monitor_h = int(geometry[3])
     width = monitor_w
     height = 16
+    hc(['pad', str(monitor), str(height)])
 
     bar = Lemonbar(geometry = (x,y,width,height))
     hc_idle = HLWMInput()
@@ -64,22 +66,35 @@ def main(argv):
                bar
              ]
 
-    for w in bar.widgets:
-        inp = w.eventinput()
-        if inp != None:
-            inputs.append(inp)
-
     def nice_theme(widget):
         widget.pad_left  = '%{-o}%{B#303030} '
         widget.pad_right = ' %{-o}%{B-}'
 
     nice_theme(hlwm_windowtitle)
     nice_theme(time_widget)
+    def request_shutdown(args):
+        quit_main_loop()
+    hc_idle.enhook('quit_panel', request_shutdown)
+    main_loop(bar, inputs)
+
+def quit_main_loop():
+    main_loop.shutdown_requested = True
+
+def main_loop(bar, inputs):
+    for w in bar.widgets:
+        inp = w.eventinput()
+        if inp != None:
+            inputs.append(inp)
 
     global_update = True
+    main_loop.shutdown_requested = False
+    def signal_quit(signal, frame):
+        quit_main_loop()
+    signal.signal(signal.SIGINT, signal_quit)
+    signal.signal(signal.SIGTERM, signal_quit)
 
     # main loop
-    while bar.is_running():
+    while not main_loop.shutdown_requested and bar.is_running():
         now = time.clock_gettime(time.CLOCK_MONOTONIC)
         for w in bar.widgets:
             if w.maybe_timeout(now):
@@ -104,11 +119,14 @@ def main(argv):
             ready = select.select(inputs,[],[], next_timeout)[0]
         else:
             ready = select.select(inputs,[],[], 18)[0]
+        if main_loop.shutdown_requested:
+            break
         if not ready:
             pass #print('timeout!')
         else:
             for x in ready:
                 x.process()
                 global_update = True
+    bar.proc.kill()
     bar.proc.wait()
 
