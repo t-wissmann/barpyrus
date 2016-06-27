@@ -123,7 +123,9 @@ def main_loop(bar, inputs):
             # wait for new data
             next_timeout = 360 # wait for at most one hour until the next bar update
             for w in bar.widgets:
-                next_timeout = min(next_timeout, w.next_timeout())
+                to = w.next_timeout()
+                if to != None:
+                    next_timeout = min(next_timeout, to)
             now = time.clock_gettime(time.CLOCK_MONOTONIC)
             next_timeout -= now
             next_timeout = max(next_timeout,0.1)

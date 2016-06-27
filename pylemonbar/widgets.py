@@ -16,22 +16,30 @@ class Widget:
         self.pad_left = ''
         self.pad_right = ''
         self.last_timeout = 0.0 # timestamp of the last timeout
+        self.subwidgets = []
     def timeout(self):
         return False
     def eventinput(self):
         return None
     def next_timeout(self):
+        next_to = None
+        for w in self.subwidgets:
+            to = w.next_timeout()
+            next_to = min(next_to, to) if next_to != None else to
         if self.timer_interval:
-            return self.last_timeout + self.timer_interval
-        else:
-            return math.inf
+            to = self.last_timeout + self.timer_interval
+            next_to = min(next_to, to) if next_to != None else to
+        return next_to
     def maybe_timeout(self, now):
+        some_timeout = False
+        for w in self.subwidgets:
+            some_timeout = some_timeout or w.maybe_timeout(now)
         if not self.timer_interval:
-            return False
+            return some_timeout
         if self.last_timeout + self.timer_interval <= now:
             self.last_timeout = now
             return self.timeout()
-        return False
+        return some_timeout
     def render(self):
         begin = ''
         end = self.pad_right
@@ -132,6 +140,7 @@ class StackedLayout(Widget):
         super(StackedLayout,self).__init__()
         self.widgets = widgets
         self.selection = selection
+        self.subwidgets = widgets
     def can_handle_input(self, click_id, btn):
         for w in self.widgets:
             if w.can_handle_input(click_id, btn):
@@ -185,6 +194,7 @@ class ListLayout(Widget):
         # just show a couple of widgets side by side
         super(ListLayout,self).__init__()
         self.widgets = widgets
+        self.subwidgets = widgets
     def render(self):
         buf = ''
         for w in self.widgets:
