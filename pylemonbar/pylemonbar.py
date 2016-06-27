@@ -121,17 +121,14 @@ def main_loop(bar, inputs):
                 #print("more data already ready")
         if not data_ready:
             # wait for new data
-            next_timeout = math.inf
+            next_timeout = 360 # wait for at most one hour until the next bar update
             for w in bar.widgets:
                 next_timeout = min(next_timeout, w.next_timeout())
             now = time.clock_gettime(time.CLOCK_MONOTONIC)
             next_timeout -= now
             next_timeout = max(next_timeout,0.1)
             #print("next timeout = " + str(next_timeout))
-            if next_timeout != math.inf:
-                data_ready = select.select(inputs,[],[], next_timeout)[0]
-            else:
-                data_ready = select.select(inputs,[],[], 18)[0]
+            data_ready = select.select(inputs,[],[], next_timeout)[0]
             if main_loop.shutdown_requested:
                 break
         if not data_ready:
