@@ -86,6 +86,8 @@ class HLWMTags(Widget):
                 urgent = True
             elif ch == ':':
                 visible = False
+            elif ch == '-':
+                pass
             else:
                 print("Unknown hlwm tag modifier >%s<" % ch)
             #if here:
