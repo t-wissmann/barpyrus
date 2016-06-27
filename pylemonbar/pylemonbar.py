@@ -51,6 +51,7 @@ def main(argv):
     setxkbmap = 'setxkbmap -option compose:menu -option ctrl:nocaps'
     setxkbmap += ' -option compose:ralt -option compose:rctrl'
 
+    kbdswitcher = HLWMLayoutSwitcher(hc_idle, xkblayouts, command = setxkbmap.split(' '))
     bar.widgets = [ RawLabel('%{l}'),
                 HLWMTags(hc_idle, monitor),
                 #Counter(),
@@ -61,7 +62,7 @@ def main(argv):
                 ShortLongLayout(
                     short_time,
                     ListLayout([
-                        HLWMLayoutSwitcher(hc_idle, xkblayouts, command = setxkbmap.split(' ')),
+                        kbdswitcher,
                         RawLabel(' '),
                         time_widget,
                     ])),
@@ -78,6 +79,9 @@ def main(argv):
     nice_theme(hlwm_windowtitle)
     nice_theme(time_widget)
     nice_theme(short_time)
+    short_time.pad_left += '%{T1}%{F#9fbc00}\ue016%{T-}%{F-} '
+    time_widget.pad_left += '%{T1}%{F#9fbc00}\ue016%{T-}%{F-} '
+    kbdswitcher.pad_left += '%{B#303030}%{T1} %{F#9fbc00}\ue26f%{T-}%{F-}'
     def request_shutdown(args):
         quit_main_loop()
     hc_idle.enhook('quit_panel', request_shutdown)
