@@ -127,3 +127,22 @@ class Switcher(Widget):
                 return True
         return False
 
+class StackedLayout(Widget):
+    def __init__(self, widgets, selection=0):
+        super(StackedLayout,self).__init__()
+        self.widgets = widgets
+        self.selection = selection
+    def can_handle_input(self, click_id, btn):
+        for w in self.widgets:
+            if w.can_handle_input(click_id, btn):
+                return True
+        return False
+    def render(self):
+        buf = ""
+        buf += self.pad_left
+        buf += self.widgets[self.selection].render()
+        buf += self.pad_right
+        return buf
+    def can_handle_input(self, click_id, btn):
+        return self.widgets[self.selection].can_handle_input(click_id, btn)
+

@@ -54,7 +54,7 @@ def main(argv):
                 HLWMTags(hc_idle, monitor),
                 #Counter(),
                 RawLabel('%{c}'),
-                hlwm_windowtitle,
+                HLWMMonitorFocusLayout(hc_idle, monitor, hlwm_windowtitle, RawLabel('X')),
                 RawLabel('%{r}'),
                 ConkyWidget('${battery_percent} '),
                 HLWMLayoutSwitcher(hc_idle, xkblayouts, command = setxkbmap.split(' ')),
@@ -107,11 +107,12 @@ def main_loop(bar, inputs):
             text += '\n'
             data_ready = select.select(inputs,[],[], 0.00)[0]
             if not data_ready:
-                print("REDRAW: " + str(time.clock_gettime(time.CLOCK_MONOTONIC)))
+                #print("REDRAW: " + str(time.clock_gettime(time.CLOCK_MONOTONIC)))
                 bar.write_flushed(text)
                 global_update = False
             else:
-                print("more data already ready")
+                pass
+                #print("more data already ready")
         if not data_ready:
             # wait for new data
             next_timeout = math.inf

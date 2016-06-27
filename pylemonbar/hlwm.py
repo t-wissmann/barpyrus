@@ -7,10 +7,12 @@ import select
 import os
 import math
 import struct
+
 from pylemonbar.widgets import Widget
 from pylemonbar.widgets import Label
 from pylemonbar.widgets import Button
 from pylemonbar.widgets import Switcher
+from pylemonbar.widgets import StackedLayout
 from pylemonbar.core import EventInput
 
 def hc(args):
@@ -164,4 +166,19 @@ class HLWMLayoutSwitcher(Switcher):
         for idx, l in enumerate(self.layouts):
             if args[0] == l[0]:
                 self.selection = idx
+
+class HLWMMonitorFocusLayout(StackedLayout):
+    def __init__(self, hlwm, monitor, wactive, wpassive):
+        self.hlwm = hlwm # the hlwm connection
+        self.wactive = wactive # widget that is shown if the monitor is focused
+        self.wpassive = wpassive # widget that is shown if the monitor is not focused
+        self.monitor = int(monitor) # monitor index to watch
+        hlwm.enhook('tag_changed', (lambda a: self.anothermonitor(a)))
+        self.curmonitor = int(hc(['attr', 'monitors.focus.index']))
+        super(HLWMMonitorFocusLayout,self).__init__([wpassive, wactive],
+            selection = int(self.curmonitor == int(monitor)))
+    def anothermonitor(self, args):
+        if len(args) >= 2:
+            self.curmonitor = int(args[1])
+            self.selection = int(self.curmonitor == self.monitor)
 
