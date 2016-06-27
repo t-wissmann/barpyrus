@@ -136,6 +136,8 @@ class StackedLayout(Widget):
         for w in self.widgets:
             if w.can_handle_input(click_id, btn):
                 return True
+        if super(StackedLayout,self).can_handle_input(click_id, btn):
+            return True
         return False
     def render(self):
         buf = ""
@@ -146,3 +148,50 @@ class StackedLayout(Widget):
     def can_handle_input(self, click_id, btn):
         return self.widgets[self.selection].can_handle_input(click_id, btn)
 
+class TabbedLayout(StackedLayout):
+    def __init__(self, tabs, selection = 0):
+        # tabs is a list of paris, where the first element is the title
+        # and the second element is the widget
+        self.tabs = tabs
+        super(TabbedLayout,self).__init__([w[1] for w in tabs], selection)
+        self.tab_label = Button(tabs[selection][0])
+        self.tab_label.callback = lambda buttonnr: self.on_click()
+    def on_click(self):
+        self.selection += 1
+        self.selection %= len(self.tabs)
+        self.tab_label.label = self.tabs[self.selection][0]
+    def can_handle_input(self, click_id, btn):
+        if self.tab_label.can_handle_input(click_id, btn):
+            return True
+        return super(TabbedLayout,self).can_handle_input(click_id, btn)
+    def render(self):
+        buf = ""
+        buf += self.tab_label.render()
+        buf += super(TabbedLayout,self).render()
+        return buf
+
+class ShortLongLayout(TabbedLayout):
+    def __init__(self, shortwidget, longwidget, longdefault = False):
+        # tabs is a list of paris, where the first element is the title
+        # and the second element is the widget
+        tabs = [
+            ('%{F#A0A0A0}+%{F-}', shortwidget),
+            ('%{F#A0A0A0}-%{F-}', longwidget),
+        ]
+        super(ShortLongLayout,self).__init__(tabs, selection = (1 if longdefault else 0))
+
+class ListLayout(Widget):
+    def __init__(self, widgets):
+        # just show a couple of widgets side by side
+        super(ListLayout,self).__init__()
+        self.widgets = widgets
+    def render(self):
+        buf = ''
+        for w in self.widgets:
+            buf += w.render()
+        return buf
+    def can_handle_input(self, click_id, btn):
+        for w in self.widgets:
+            if w.can_handle_input(click_id, btn):
+                return True
+        return False

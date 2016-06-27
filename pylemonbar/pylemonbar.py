@@ -42,6 +42,7 @@ def main(argv):
     #session_button.callback = session_menu
 
     time_widget = DateTime()
+    short_time = DateTime('%H:%M')
     hlwm_windowtitle = HLWMWindowTitle(hc_idle)
     xkblayouts = [
         'us us -variant altgr-intl us'.split(' '),
@@ -57,9 +58,13 @@ def main(argv):
                 HLWMMonitorFocusLayout(hc_idle, monitor, hlwm_windowtitle, RawLabel('')),
                 RawLabel('%{r}'),
                 ConkyWidget('${if_existing /sys/class/power_supply/BAT0}B: ${battery_percent} $endif'),
-                HLWMLayoutSwitcher(hc_idle, xkblayouts, command = setxkbmap.split(' ')),
-                RawLabel(' '),
-                time_widget,
+                ShortLongLayout(
+                    short_time,
+                    ListLayout([
+                        HLWMLayoutSwitcher(hc_idle, xkblayouts, command = setxkbmap.split(' ')),
+                        RawLabel(' '),
+                        time_widget,
+                    ])),
     ]
 
     inputs = [ hc_idle,
@@ -72,6 +77,7 @@ def main(argv):
 
     nice_theme(hlwm_windowtitle)
     nice_theme(time_widget)
+    nice_theme(short_time)
     def request_shutdown(args):
         quit_main_loop()
     hc_idle.enhook('quit_panel', request_shutdown)
