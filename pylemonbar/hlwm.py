@@ -132,15 +132,32 @@ class HLWMTags(Widget):
         hc(cmd)
 
 class HLWMWindowTitle(Label):
-    def __init__(self, hlwm):
-        super(HLWMWindowTitle,self).__init__(hc(['attr', 'clients.focus.title']))
+    def __init__(self, hlwm, maxlen = -1):
+        self.windowtitle = hc(['attr', 'clients.focus.title'])
+        self.maxlen = maxlen
+        super(HLWMWindowTitle,self).__init__('')
+        self.buttons = [4 , 5]
+        self.reset_label()
         hlwm.enhook('focus_changed', (lambda a: self.newtitle(a)))
         hlwm.enhook('window_title_changed', (lambda a: self.newtitle(a)))
     def newtitle(self,args):
-        if len(args) >= 2:
-            self.label = args[1]
+        self.windowtitle = args[1] if len(args) >= 2 else ''
+        self.reset_label()
+    def reset_label(self):
+        if self.maxlen < 0:
+            self.label = self.windowtitle
         else:
-            self.label = ''
+            self.label = self.windowtitle[:self.maxlen]
+    def on_click(self, b):
+        if self.maxlen > len(self.windowtitle) or self.maxlen < 0:
+            self.maxlen = len(self.windowtitle)
+        if b == 5:
+            self.maxlen = max(1, self.maxlen - 1)
+        elif b == 4:
+            self.maxlen = self.maxlen + 1
+        if self.maxlen > len(self.windowtitle):
+            self.maxlen = -1
+        self.reset_label()
     def render(self):
         if self.label == '':
             return ""
