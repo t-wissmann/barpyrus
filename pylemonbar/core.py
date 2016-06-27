@@ -47,7 +47,7 @@ class Lemonbar(EventInput):
         if geometry:
             (x,y,w,h) = geometry
             command += [ '-g', "%dx%d%+d%+d" % (w,h,x,y)  ]
-        command += '-d -u 2 -B #ee121212 -f -*-fixed-medium-*-*-*-12-*-*-*-*-*-*-*'.split(' ')
+        command += '-a 100 -d -u 2 -B #ee121212 -f -*-fixed-medium-*-*-*-12-*-*-*-*-*-*-*'.split(' ')
         super(Lemonbar,self).__init__(command)
         self.widgets = None
 
