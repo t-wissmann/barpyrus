@@ -56,7 +56,7 @@ def main(argv):
                 RawLabel('%{c}'),
                 HLWMMonitorFocusLayout(hc_idle, monitor, hlwm_windowtitle, RawLabel('X')),
                 RawLabel('%{r}'),
-                ConkyWidget('${battery_percent} '),
+                ConkyWidget('${if_existing /sys/class/power_supply/BAT0}${battery_percent} $endif'),
                 HLWMLayoutSwitcher(hc_idle, xkblayouts, command = setxkbmap.split(' ')),
                 RawLabel(' '),
                 time_widget,
