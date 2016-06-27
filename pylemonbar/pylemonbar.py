@@ -99,32 +99,38 @@ def main_loop(bar, inputs):
         for w in bar.widgets:
             if w.maybe_timeout(now):
                 global_update = True
+        data_ready = []
         if global_update:
             text = ''
             for w in bar.widgets:
                 text += w.render()
             text += '\n'
-            #print(text, end='')
-            bar.write_flushed(text)
-            global_update = False
-        # wait for new data
-        next_timeout = math.inf
-        for w in bar.widgets:
-            next_timeout = min(next_timeout, w.next_timeout())
-        now = time.clock_gettime(time.CLOCK_MONOTONIC)
-        next_timeout -= now
-        next_timeout = max(next_timeout,0.1)
-        #print("next timeout = " + str(next_timeout))
-        if next_timeout != math.inf:
-            ready = select.select(inputs,[],[], next_timeout)[0]
-        else:
-            ready = select.select(inputs,[],[], 18)[0]
-        if main_loop.shutdown_requested:
-            break
-        if not ready:
+            data_ready = select.select(inputs,[],[], 0.00)[0]
+            if not data_ready:
+                print("REDRAW: " + str(time.clock_gettime(time.CLOCK_MONOTONIC)))
+                bar.write_flushed(text)
+                global_update = False
+            else:
+                print("more data already ready")
+        if not data_ready:
+            # wait for new data
+            next_timeout = math.inf
+            for w in bar.widgets:
+                next_timeout = min(next_timeout, w.next_timeout())
+            now = time.clock_gettime(time.CLOCK_MONOTONIC)
+            next_timeout -= now
+            next_timeout = max(next_timeout,0.1)
+            #print("next timeout = " + str(next_timeout))
+            if next_timeout != math.inf:
+                data_ready = select.select(inputs,[],[], next_timeout)[0]
+            else:
+                data_ready = select.select(inputs,[],[], 18)[0]
+            if main_loop.shutdown_requested:
+                break
+        if not data_ready:
             pass #print('timeout!')
         else:
-            for x in ready:
+            for x in data_ready:
                 x.process()
                 global_update = True
     bar.proc.kill()
