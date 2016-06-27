@@ -109,8 +109,8 @@ class Switcher(Widget):
         for i,btn in enumerate(self.buttons):
             btn.callback = (lambda j: lambda buttonnr: self.choice_clicked(j))(i)
         self.normalbg = '#303030'
-        self.normalfg = 'white'
-        self.focusfg = 'black'
+        self.normalfg = '#ffffff'
+        self.focusfg = '#000000'
         self.focusbg = '#9fbc00'
         self.selection = selection
     def choice_clicked(self, idx):

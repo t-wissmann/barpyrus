@@ -97,7 +97,7 @@ class HLWMTags(Widget):
             form += '%{+o}' if visible else '%{-o}'
             form += '%{F-}' if occupied else '%{F#909090}'
             form += '%{B#eeD6156C}%{-o}' if urgent else ''
-            form += ('%{Fwhite}%{U' + self.activecolor + '}' ) if focused else '%{U#454545}'
+            form += ('%{F#ffffff}%{U' + self.activecolor + '}' ) if focused else '%{U#454545}'
             self.tags[i].pad_left = form + ' '
             self.tags[i].label = strlist[i][1:]
         self.needs_update = False
