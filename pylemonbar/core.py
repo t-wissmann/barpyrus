@@ -41,6 +41,28 @@ class EventInput:
         self.proc.stdin.write(text.encode('utf-8'))
         self.proc.stdin.flush()
 
+class Painter:
+    def __init__(self):
+        self.flags = 0
+    def drawRaw(self, text): # draw text and possibly interpret them as control characters
+        pass
+    def __iadd__(self, text): # draw a text savely
+        pass
+    def fg(self, color = None): # sets the foreground color (None resets it to the default)
+        pass
+    def bg(self, color = None): # sets the background color (None resets it to the default)
+        pass
+    def linecolor(self, color = None): # sets the line color (None resets it to the default)
+        pass
+    def __ior__(self, flags): # set the flags to a fixed set using: |=
+        pass
+    def __ixor__(self, flags): # set the flags to a fixed set using: |=
+        pass
+    def symbol(self, symbol):
+        pass
+    def flush(self):
+        pass
+
 class Lemonbar(EventInput):
     def __init__(self, geometry = None):
         command = [ "lemonbar" ]
@@ -62,6 +84,31 @@ class Lemonbar(EventInput):
             for w in self.widgets:
                 if w.can_handle_input(name, btn):
                     break
+    class LBPainter(Painter):
+        def __init__(self,lemonbar):
+            super(LBPainter,self).__init__()
+            self.buf = ""
+            self.lemonbar = lemonbar
+        def drawRaw(self, text):
+            self.buf += text
+        def __iadd__(self, text):
+            self.buf += text.replace('%', '%%')
+        def fg(self, color = None):
+            self.buf += '%{F' + color + '}' if color else '%{F-}'
+        def bg(self, color = None):
+            self.buf += '%{B' + color + '}' if color else '%{B-}'
+        def linecolor(self, color = None):
+            self.buf += '%{U' + color + '}' if color else '%{U-}'
+        def symbol(self, symbol):
+            self.buf += '%{T1}' + chr(symbol) + '%{T-}'
+        def flush(self):
+            lemonbar.write_flushed(text)
+    def painter(self):
+        return LBPainter(self)
+    def paintstr(self, actions):
+        p = LBPainter(None)
+        actions(p)
+        return p.buf
 
 def get_mouse_location():
     cmd = 'xdotool getmouselocation'.split(' ')
