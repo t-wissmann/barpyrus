@@ -52,7 +52,9 @@ class Painter:
         pass
     def bg(self, color = None): # sets the background color (None resets it to the default)
         pass
-    def linecolor(self, color = None): # sets the line color (None resets it to the default)
+    def ul(self, color = None): # sets the underline color (None resets it to the default)
+        pass
+    def ol(self, color = None): # sets the overline color (None resets it to the default)
         pass
     def __ior__(self, flags): # set the flags to a fixed set using: |=
         pass
@@ -61,6 +63,13 @@ class Painter:
     def symbol(self, symbol):
         pass
     def flush(self):
+        pass
+    def clickable(self, buttons, obj, callback):
+        # render a clickable area
+        # buttons = a list of mouse button numbers
+        # callback = a function with the paramters: callback(object, button)
+        #           object = the given object obj
+        #           button = the number of the button that was clicked
         pass
 
 class Lemonbar(EventInput):
@@ -99,13 +108,17 @@ class Lemonbar(EventInput):
             self.buf += '%{B' + color + '}' if color else '%{B-}'
         def linecolor(self, color = None):
             self.buf += '%{U' + color + '}' if color else '%{U-}'
+        def ul(self, color = None):
+            self.linecolor(color)
+        def ol(self, color = None):
+            self.linecolor(color)
         def symbol(self, symbol):
             self.buf += '%{T1}' + chr(symbol) + '%{T-}'
         def flush(self):
             lemonbar.write_flushed(text)
     def painter(self):
         return LBPainter(self)
-    def paintstr(self, actions):
+    def textpainter(self, actions):
         p = LBPainter(None)
         actions(p)
         return p.buf
