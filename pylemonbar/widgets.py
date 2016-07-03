@@ -18,9 +18,13 @@ class Widget:
         self.last_timeout = 0.0 # timestamp of the last timeout
         self.subwidgets = []
     def timeout(self):
+        # called on timeout. Return true if an update is needed
         return False
-    def eventinput(self):
-        return None
+    def eventinputs(self): # returns a list of Core.EventInput objects
+        inputs = []
+        for w in self.subwidgets:
+            inputs += w.eventinputs()
+        return inputs
     def next_timeout(self):
         next_to = None
         for w in self.subwidgets:
@@ -33,12 +37,11 @@ class Widget:
     def maybe_timeout(self, now):
         some_timeout = False
         for w in self.subwidgets:
-            some_timeout = some_timeout or w.maybe_timeout(now)
-        if not self.timer_interval:
-            return some_timeout
-        if self.last_timeout + self.timer_interval <= now:
+            some_timeout = w.maybe_timeout(now) or some_timeout
+        if self.timer_interval and self.last_timeout + self.timer_interval <= now:
             self.last_timeout = now
-            return self.timeout()
+            self.timeout()
+            some_timeout = True
         return some_timeout
     def render(self):
         begin = ''

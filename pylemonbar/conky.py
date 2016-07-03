@@ -35,6 +35,6 @@ class ConkyWidget(RawLabel):
         self.conky.callback = lambda line: self.update_label(line)
     def update_label(self, line):
         self.label = line
-    def eventinput(self):
-        return self.conky
+    def eventinputs(self):
+        return [ self.conky ]
 

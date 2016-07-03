@@ -56,7 +56,10 @@ def main(argv):
                 HLWMTags(hc_idle, monitor),
                 #Counter(),
                 RawLabel('%{c}'),
-                HLWMMonitorFocusLayout(hc_idle, monitor, hlwm_windowtitle, RawLabel('')),
+                HLWMMonitorFocusLayout(hc_idle, monitor,
+                                       hlwm_windowtitle, 
+                                       ConkyWidget('df /: ${fs_used_perc /}%')
+                                                ),
                 RawLabel('%{r}'),
                 ConkyWidget('${if_existing /sys/class/power_supply/BAT0}B: ${battery_percent} $endif'),
                 ShortLongLayout(
@@ -92,9 +95,7 @@ def quit_main_loop():
 
 def main_loop(bar, inputs):
     for w in bar.widgets:
-        inp = w.eventinput()
-        if inp != None:
-            inputs.append(inp)
+        inputs += w.eventinputs()
 
     global_update = True
     main_loop.shutdown_requested = False
