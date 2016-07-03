@@ -55,6 +55,9 @@ class Widget:
     def content(self):
         return 'widget'
     def can_handle_input(self, click_id, btn):
+        for w in self.subwidgets:
+            if w.can_handle_input(click_id, btn):
+                return True
         if click_id == self.click_id:
             self.on_click(btn)
             return True
@@ -109,6 +112,7 @@ class Switcher(Widget):
     def __init__(self,choices,selection=0):
         super(Switcher,self).__init__()
         self.buttons = [ Button(x) for x in choices ]
+        self.subwidgets = self.buttons
         for i,btn in enumerate(self.buttons):
             btn.callback = (lambda j: lambda buttonnr: self.choice_clicked(j))(i)
         self.normalbg = '#303030'
@@ -130,13 +134,6 @@ class Switcher(Widget):
         buf += ' %{B-}%{-o}%{-u}%{F-}'
         buf += self.pad_right
         return buf
-    def can_handle_input(self, click_id, btn):
-        if super(Switcher,self).can_handle_input(click_id, btn):
-            return True
-        for btn in self.buttons:
-            if btn.can_handle_input(click_id, btn):
-                return True
-        return False
 
 class StackedLayout(Widget):
     def __init__(self, widgets, selection=0):
@@ -144,13 +141,6 @@ class StackedLayout(Widget):
         self.widgets = widgets
         self.selection = selection
         self.subwidgets = widgets
-    def can_handle_input(self, click_id, btn):
-        for w in self.widgets:
-            if w.can_handle_input(click_id, btn):
-                return True
-        if super(StackedLayout,self).can_handle_input(click_id, btn):
-            return True
-        return False
     def render(self):
         buf = ""
         buf += self.pad_left
@@ -203,8 +193,3 @@ class ListLayout(Widget):
         for w in self.widgets:
             buf += w.render()
         return buf
-    def can_handle_input(self, click_id, btn):
-        for w in self.widgets:
-            if w.can_handle_input(click_id, btn):
-                return True
-        return False

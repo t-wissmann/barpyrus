@@ -52,7 +52,8 @@ def main(argv):
     setxkbmap += ' -option compose:ralt -option compose:rctrl'
 
     kbdswitcher = HLWMLayoutSwitcher(hc_idle, xkblayouts, command = setxkbmap.split(' '))
-    bar.widgets = [ RawLabel('%{l}'),
+    bar.widgets = [ ListLayout([
+                RawLabel('%{l}'),
                 HLWMTags(hc_idle, monitor),
                 #Counter(),
                 RawLabel('%{c}'),
@@ -69,7 +70,7 @@ def main(argv):
                         RawLabel(' '),
                         time_widget,
                     ])),
-    ]
+    ])]
 
     inputs = [ hc_idle,
                bar
