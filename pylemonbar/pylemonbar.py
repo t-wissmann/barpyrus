@@ -142,5 +142,7 @@ def main_loop(bar, inputs):
                 x.process()
                 global_update = True
     bar.proc.kill()
+    for i in inputs:
+        i.kill()
     bar.proc.wait()
 

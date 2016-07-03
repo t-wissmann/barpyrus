@@ -32,6 +32,8 @@ class EventInput:
     def process(self):
         for line in self.readlines():
             self.handle_line(line)
+    def kill(self):
+        self.proc.kill()
     def is_running(self):
         return self.proc.pid != None
     def handle_line(self,line):
