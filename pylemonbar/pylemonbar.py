@@ -52,7 +52,7 @@ def main(argv):
     setxkbmap += ' -option compose:ralt -option compose:rctrl'
 
     kbdswitcher = HLWMLayoutSwitcher(hc_idle, xkblayouts, command = setxkbmap.split(' '))
-    bar.widgets = [ ListLayout([
+    bar.widget = ListLayout([
                 RawLabel('%{l}'),
                 HLWMTags(hc_idle, monitor),
                 #Counter(),
@@ -70,7 +70,7 @@ def main(argv):
                         RawLabel(' '),
                         time_widget,
                     ])),
-    ])]
+    ])
 
     inputs = [ hc_idle,
                bar
@@ -95,8 +95,7 @@ def quit_main_loop():
     main_loop.shutdown_requested = True
 
 def main_loop(bar, inputs):
-    for w in bar.widgets:
-        inputs += w.eventinputs()
+    inputs += bar.widget.eventinputs()
 
     global_update = True
     main_loop.shutdown_requested = False
@@ -108,14 +107,12 @@ def main_loop(bar, inputs):
     # main loop
     while not main_loop.shutdown_requested and bar.is_running():
         now = time.clock_gettime(time.CLOCK_MONOTONIC)
-        for w in bar.widgets:
-            if w.maybe_timeout(now):
-                global_update = True
+        if bar.widget.maybe_timeout(now):
+            global_update = True
         data_ready = []
         if global_update:
             text = ''
-            for w in bar.widgets:
-                text += w.render()
+            text += bar.widget.render()
             text += '\n'
             data_ready = select.select(inputs,[],[], 0.00)[0]
             if not data_ready:
@@ -128,10 +125,9 @@ def main_loop(bar, inputs):
         if not data_ready:
             # wait for new data
             next_timeout = 360 # wait for at most one hour until the next bar update
-            for w in bar.widgets:
-                to = w.next_timeout()
-                if to != None:
-                    next_timeout = min(next_timeout, to)
+            to = bar.widget.next_timeout()
+            if to != None:
+                next_timeout = min(next_timeout, to)
             now = time.clock_gettime(time.CLOCK_MONOTONIC)
             next_timeout -= now
             next_timeout = max(next_timeout,0.1)

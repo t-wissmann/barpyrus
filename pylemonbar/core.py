@@ -81,7 +81,7 @@ class Lemonbar(EventInput):
         command += '-a 100 -d -u 2 -B #ee121212 -f -*-fixed-medium-*-*-*-12-*-*-*-*-*-*-*'.split(' ')
         command += '-f -wuncon-siji-medium-r-normal--10-100-75-75-c-80-iso10646-1'.split(' ')
         super(Lemonbar,self).__init__(command)
-        self.widgets = None
+        self.widget = None
 
     def handle_line(self,line):
         line = line.split('_')
@@ -90,9 +90,8 @@ class Lemonbar(EventInput):
         else:
             name = line[0]
             btn = int(line[1])
-            for w in self.widgets:
-                if w.can_handle_input(name, btn):
-                    break
+            if self.widget != None:
+                self.widget.can_handle_input(name, btn)
     class LBPainter(Painter):
         def __init__(self,lemonbar):
             super(LBPainter,self).__init__()
