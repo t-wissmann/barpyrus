@@ -72,6 +72,23 @@ class Painter:
         # callback = a function with the paramters: callback(object, button)
         #           object = the given object obj
         #           button = the number of the button that was clicked
+        class Clickable:
+            def __init__(self,painter):
+                self.p = painter
+            def __enter__(self):
+                self.p._enter_clickable()
+            def __exit__(self):
+                self.p._exit_clickable()
+        c = Clickable(self)
+        c.buttons = buttons
+        c.obj = obj
+        c.callback = callback
+        return c
+    # draw the start of a clickable area
+    def _enter_clickable(self, clickable):
+        pass
+    # draw the end of a clickable area
+    def _exit_clickable(self, clickable):
         pass
 
 class Lemonbar(EventInput):
@@ -84,16 +101,20 @@ class Lemonbar(EventInput):
         command += '-f -wuncon-siji-medium-r-normal--10-100-75-75-c-80-iso10646-1'.split(' ')
         super(Lemonbar,self).__init__(command)
         self.widget = None
+        self.clickareas = { }
 
     def handle_line(self,line):
-        line = line.split('_')
-        if len(line) != 2:
-            print("invalid event name: %s" % '_'.join(line))
-        else:
+        if line in self.clickareas:
+            (callback, obj, b) = self.clickareas[line]
+            callback(obj, b)
+        elif len(line.split('_')) == 2 and self.widget != None:
+            # temporary workaround during dransition to painters
+            line = line.split('_')
             name = line[0]
             btn = int(line[1])
-            if self.widget != None:
-                self.widget.can_handle_input(name, btn)
+            self.widget.can_handle_input(name, btn)
+        else:
+            print("invalid event name: %s" % line)
     class LBPainter(Painter):
         def __init__(self,lemonbar):
             super(LBPainter,self).__init__()
@@ -117,6 +138,15 @@ class Lemonbar(EventInput):
             self.buf += '%{T1}' + chr(symbol) + '%{T-}'
         def flush(self):
             lemonbar.write_flushed(text)
+        def _enter_clickable(self, clickable):
+            for b in clickable.buttons:
+                clickname = str(clickable.obj) + '_' + str(b)
+                self.buf += '%%{A%d:%s:}' % (b,clickname)
+                self.lemonbar.clickareas[clickname] = (clickable.callback, clickable.obj, b)
+        def _exit_clickable(self, clickable):
+            clickname = str(clickable.obj) + '_' + str(b)
+            for b in clickable.buttons:
+                self.buf += '%{A}'
     def painter(self):
         return LBPainter(self)
     def textpainter(self, actions):
