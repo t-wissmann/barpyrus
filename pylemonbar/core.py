@@ -7,6 +7,7 @@ import select
 import os
 import math
 import struct
+from pylemonbar import widgets
 
 class EventInput:
     def __init__(self, command):
@@ -44,6 +45,8 @@ class EventInput:
         self.proc.stdin.flush()
 
 class Painter:
+    underline = 0x01
+    overline  = 0x02
     def __init__(self):
         self.flags = 0
     def drawRaw(self, text): # draw text and possibly interpret them as control characters
@@ -58,32 +61,53 @@ class Painter:
         pass
     def ol(self, color = None): # sets the overline color (None resets it to the default)
         pass
-    def __ior__(self, flags): # set the flags to a fixed set using: |=
+    def set_flag(self, flag, value):
+        if value:
+            self.set_flags(self.flags | flag)
+        else:
+            self.set_flags(self.flags & ~flag)
+    def set_flags(self,flags):
+        oldflags = self.flags
+        self.flags = flags
+        if (oldflags & Painter.underline) != (flags & Painter.underline):
+            self.set_ul((flags & Painter.underline) != 0x0)
+        if (oldflags & Painter.overline) != (flags & Painter.overline):
+            self.set_ol((flags & Painter.overline) != 0x0)
+    def __ior__(self, flags): # add the given flags
+        self.set_flags(flags | self.flags)
+        return self
+    def set_ul(self, enabled):
         pass
-    def __ixor__(self, flags): # set the flags to a fixed set using: |=
+    def set_ol(self, enabled):
         pass
     def symbol(self, symbol):
         pass
     def flush(self):
         pass
-    def clickable(self, buttons, obj, callback):
-        # render a clickable area
-        # buttons = a list of mouse button numbers
-        # callback = a function with the paramters: callback(object, button)
-        #           object = the given object obj
-        #           button = the number of the button that was clicked
-        class Clickable:
-            def __init__(self,painter):
-                self.p = painter
-            def __enter__(self):
-                self.p._enter_clickable()
-            def __exit__(self):
-                self.p._exit_clickable()
-        c = Clickable(self)
-        c.buttons = buttons
-        c.obj = obj
-        c.callback = callback
-        return c
+
+    class Clickable:
+        def __init__(self, buttons, obj, callback):
+            # buttons = a list of mouse button numbers
+            # callback = a function with the paramters: callback(object, button)
+            #           object = the given object obj
+            #           button = the number of the button that was clicked
+            self.buttons = buttons
+            self.obj = obj
+            self.callback = callback
+
+    def widget(self, widget):
+        clickable = None
+        if widget.buttons:
+            clickable = Painter.Clickable(widget.buttons, widget, widget.on_click)
+            self._enter_clickable(clickable)
+        if widget.pre_render:
+            widget.pre_render(self)
+        widget.render(self)
+        if widget.post_render:
+            widget.post_render(self)
+        if widget.buttons:
+            self._exit_clickable(clickable)
+
     # draw the start of a clickable area
     def _enter_clickable(self, clickable):
         pass
@@ -105,25 +129,30 @@ class Lemonbar(EventInput):
 
     def handle_line(self,line):
         if line in self.clickareas:
-            (callback, obj, b) = self.clickareas[line]
-            callback(obj, b)
-        elif len(line.split('_')) == 2 and self.widget != None:
-            # temporary workaround during dransition to painters
-            line = line.split('_')
-            name = line[0]
-            btn = int(line[1])
-            self.widget.can_handle_input(name, btn)
+            (callback, b) = self.clickareas[line]
+            callback(b)
+        #elif len(line.split('_')) == 2 and self.widget != None:
+        #    # temporary workaround during dransition to painters
+        #    line = line.split('_')
+        #    name = line[0]
+        #    btn = int(line[1])
+        #    self.widget.can_handle_input(name, btn)
         else:
             print("invalid event name: %s" % line)
     class LBPainter(Painter):
         def __init__(self,lemonbar):
-            super(LBPainter,self).__init__()
+            super(Lemonbar.LBPainter,self).__init__()
             self.buf = ""
             self.lemonbar = lemonbar
         def drawRaw(self, text):
             self.buf += text
         def __iadd__(self, text):
             self.buf += text.replace('%', '%%')
+            return self
+        def set_ul(self, enabled):
+            self.buf += '%{+u}' if enabled else '%{-u}'
+        def set_ol(self, enabled):
+            self.buf += '%{+o}' if enabled else '%{-o}'
         def fg(self, color = None):
             self.buf += '%{F' + color + '}' if color else '%{F-}'
         def bg(self, color = None):
@@ -137,18 +166,17 @@ class Lemonbar(EventInput):
         def symbol(self, symbol):
             self.buf += '%{T1}' + chr(symbol) + '%{T-}'
         def flush(self):
-            lemonbar.write_flushed(text)
+            self.lemonbar.write_flushed(self.buf + '\n')
         def _enter_clickable(self, clickable):
             for b in clickable.buttons:
-                clickname = str(clickable.obj) + '_' + str(b)
+                clickname = str(id(clickable.obj)) + '_' + str(b)
                 self.buf += '%%{A%d:%s:}' % (b,clickname)
-                self.lemonbar.clickareas[clickname] = (clickable.callback, clickable.obj, b)
+                self.lemonbar.clickareas[clickname] = (clickable.callback, b)
         def _exit_clickable(self, clickable):
-            clickname = str(clickable.obj) + '_' + str(b)
             for b in clickable.buttons:
                 self.buf += '%{A}'
     def painter(self):
-        return LBPainter(self)
+        return Lemonbar.LBPainter(self)
     def textpainter(self, actions):
         p = LBPainter(None)
         actions(p)

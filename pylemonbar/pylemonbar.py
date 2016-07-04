@@ -77,15 +77,16 @@ def main(argv):
              ]
 
     def nice_theme(widget):
-        widget.pad_left  = '%{-o}%{B#303030} '
-        widget.pad_right = ' %{-o}%{B-}'
+        #widget.pad_left  = '%{-o}%{B#303030} '
+        #widget.pad_right = ' %{-o}%{B-}'
+        pass
 
     nice_theme(hlwm_windowtitle)
     nice_theme(time_widget)
     nice_theme(short_time)
-    short_time.pad_left += '%{T1}%{F#9fbc00}\ue016%{T-}%{F-} '
-    time_widget.pad_left += '%{T1}%{F#9fbc00}\ue016%{T-}%{F-} '
-    kbdswitcher.pad_left += '%{B#303030}%{T1} %{F#9fbc00}\ue26f%{T-}%{F-}'
+    #short_time.pad_left += '%{T1}%{F#9fbc00}\ue016%{T-}%{F-} '
+    #time_widget.pad_left += '%{T1}%{F#9fbc00}\ue016%{T-}%{F-} '
+    #kbdswitcher.pad_left += '%{B#303030}%{T1} %{F#9fbc00}\ue26f%{T-}%{F-}'
     def request_shutdown(args):
         quit_main_loop()
     hc_idle.enhook('quit_panel', request_shutdown)
@@ -111,13 +112,12 @@ def main_loop(bar, inputs):
             global_update = True
         data_ready = []
         if global_update:
-            text = ''
-            text += bar.widget.render()
-            text += '\n'
+            painter = bar.painter()
+            painter.widget(bar.widget)
             data_ready = select.select(inputs,[],[], 0.00)[0]
             if not data_ready:
                 #print("REDRAW: " + str(time.clock_gettime(time.CLOCK_MONOTONIC)))
-                bar.write_flushed(text)
+                painter.flush()
                 global_update = False
             else:
                 pass

@@ -14,6 +14,7 @@ from pylemonbar.widgets import Button
 from pylemonbar.widgets import Switcher
 from pylemonbar.widgets import StackedLayout
 from pylemonbar.core import EventInput
+from pylemonbar.core import Painter
 
 def hc(args):
     cmd = [ "herbstclient", "-n" ]
@@ -37,14 +38,74 @@ class HLWMInput(EventInput):
             for cb in self.hooks[args[0]]:
                 cb(args[1:])
 
+class HLWMTagInfo:
+    def __init__(self):
+        self.name = '?'
+        self.occupied = True
+        self.focused = False
+        self.here = False
+        self.urgent = False
+        self.visible = True
+        self.empty = False
+        self.activecolor = '#9fbc00'
+        self.emphbg = '#303030'
+    def parse(self,string): # parse a tag_status string
+        self.name = string[1:]
+        self.parse_char(string[0])
+    def parse_char(self,ch): # parse a tag_status char
+        self.occupied = True
+        self.focused = False
+        self.here = False
+        self.urgent = False
+        self.visible = True
+        self.empty = False
+        if ch == '.':
+            self.occupied = False
+            self.visible = False
+            self.empty = True
+        elif ch == '#':
+            self.focused = True
+            self.here = True
+        elif ch == '%':
+            self.focused = True
+        elif ch == '+':
+            self.here = True
+        elif ch == '!':
+            self.urgent = True
+        elif ch == ':':
+            self.visible = False
+        elif ch == '-':
+            pass
+        else:
+            print("Unknown hlwm tag modifier >%s<" % ch)
+
+    def render(self, painter):
+        if self.empty:
+            return
+        painter.bg(self.emphbg if self.here else None)
+        painter.set_flag(painter.overline, True if self.visible else False)
+        painter.fg(None if self.occupied else '#909090')
+        if self.urgent:
+            painter.bg('#eeD6156C')
+            painter.set_flag(Painter.overline, False)
+        if self.focused:
+            painter.fg('#ffffff')
+            painter.ol(self.activecolor)
+        else:
+            painter.ol('#454545')
+        painter += ' %s ' % self.name
+        painter.bg()
+        painter.ol()
+        painter.set_flag(painter.overline, False)
+
 class HLWMTags(Widget):
     def __init__(self,hlwm,monitor):
         super(HLWMTags,self).__init__()
         self.needs_update = True
         self.tags = [ ]
+        self.tag_info = [ ]
         self.tag_count = 0
         self.buttons = [4, 5]
-        self.pad_right = '%{F-}%{B-}%{-o}'
         self.monitor = monitor
         self.activecolor = hc('attr theme.tiling.active.color'.split(' '))
         self.emphbg = '#303030'
@@ -59,60 +120,25 @@ class HLWMTags(Widget):
         self.tag_count = len(strlist)
         # enlarge the tag button array
         for i in range(len(self.tags),len(strlist)):
-            btn = Button(str(i))
+            btn = Button('')
             btn.callback = (lambda j: lambda b: self.tag_clicked(j, b))(i)
+            tag_info = HLWMTagInfo()
+            btn.pre_render = tag_info.render
             self.tags.append(btn)
+            self.subwidgets.append(btn)
+            self.tag_info.append(tag_info)
         # update names and formatting
         for i in range(0, self.tag_count):
-            occupied = True
-            focused = False
-            here = False
-            urgent = False
-            visible = True
-            ch = strlist[i][0]
-            self.tags[i].empty = False
-            if ch == '.':
-                occupied = False
-                visible = False
-                self.tags[i].empty = True
-            elif ch == '#':
-                focused = True
-                here = True
-            elif ch == '%':
-                focused = True
-            elif ch == '+':
-                here = True
-            elif ch == '!':
-                urgent = True
-            elif ch == ':':
-                visible = False
-            elif ch == '-':
-                pass
-            else:
-                print("Unknown hlwm tag modifier >%s<" % ch)
-            #if here:
-            #    print('tag:        %s' %strlist[i][1:])
-            form = ''
-            form += '%{B' + self.emphbg + '}' if here else '%{B-}'
-            form += '%{+o}' if visible else '%{-o}'
-            form += '%{F-}' if occupied else '%{F#909090}'
-            form += '%{B#eeD6156C}%{-o}' if urgent else ''
-            form += ('%{F#ffffff}%{U' + self.activecolor + '}' ) if focused else '%{U#454545}'
-            self.tags[i].pad_left = form + ' '
-            self.tags[i].label = strlist[i][1:]
+            self.tag_info[i].parse(strlist[i])
         self.needs_update = False
     def tag_clicked(self,tagindex,button):
         cmd = 'chain , focus_monitor %d , use_index %d' % (self.monitor,tagindex)
         cmd = cmd.split(' ')
         #print(cmd)
         hc(cmd)
-    def content(self):
-        text = ''
+    def render(self,painter):
         for t in self.tags:
-            if t.empty:
-                continue
-            text += t.render()
-        return text
+            painter.widget(t)
     def can_handle_input(self, click_id, btn):
         if super(HLWMTags,self).can_handle_input(click_id,btn):
             return True
@@ -158,11 +184,9 @@ class HLWMWindowTitle(Label):
         if self.maxlen > len(self.windowtitle):
             self.maxlen = -1
         self.reset_label()
-    def render(self):
-        if self.label == '':
-            return ""
-        else:
-            return super(HLWMWindowTitle,self).render()
+    def render(self,painter):
+        if self.label != '':
+            super(HLWMWindowTitle,self).render(painter)
 
 class HLWMLayoutSwitcher(Switcher):
     def __init__(self, hlwm, layouts, command = [ 'setxkbmap' ]):

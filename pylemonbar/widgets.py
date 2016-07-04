@@ -8,13 +8,15 @@ import os
 import math
 import struct
 
+from pylemonbar import core
+
 class Widget:
     def __init__(self):
         self.timer_interval = None
         self.buttons = [ ]
         self.click_id = 'w' + str(id(self))
-        self.pad_left = ''
-        self.pad_right = ''
+        self.pre_render = None
+        self.post_render = None
         self.last_timeout = 0.0 # timestamp of the last timeout
         self.subwidgets = []
     def timeout(self):
@@ -43,17 +45,8 @@ class Widget:
             self.timeout()
             some_timeout = True
         return some_timeout
-    def render(self):
-        begin = ''
-        end = self.pad_right
-        for b in self.buttons:
-            clickname = self.click_id + '_' + str(b)
-            begin += '%%{A%d:%s:}' % (b,clickname)
-            end += '%{A}'
-        begin += self.pad_left
-        return begin + self.content() + end
-    def content(self):
-        return 'widget'
+    def render(self, painter):
+        painter += 'widget'
     def can_handle_input(self, click_id, btn):
         for w in self.subwidgets:
             if w.can_handle_input(click_id, btn):
@@ -70,26 +63,24 @@ class RawLabel(Widget):
     def __init__(self,label):
         super(RawLabel,self).__init__()
         self.label = label
-    def render(self):
-        return self.label
+    def render(self, p):
+        p.drawRaw(self.label)
 
 class Label(Widget):
     def __init__(self,label):
         super(Label,self).__init__()
         self.label = label
-    def content(self):
-        return self.label.replace('%', '%%')
+    def render(self, p):
+        p += self.label
 
 class Button(Widget):
     def __init__(self,label):
         super(Button,self).__init__()
         self.label = label
-        self.pad_left = ' '
-        self.pad_right = ' '
         self.buttons = [ 1 ]
         self.callback = None
-    def content(self):
-        return self.label
+    def render(self, p):
+        p += self.label
     def on_click(self, button):
         #print("btn %d" % button)
         if self.callback:
@@ -111,9 +102,9 @@ class DateTime(Label):
 class Switcher(Widget):
     def __init__(self,choices,selection=0):
         super(Switcher,self).__init__()
-        self.buttons = [ Button(x) for x in choices ]
-        self.subwidgets = self.buttons
-        for i,btn in enumerate(self.buttons):
+        self.option_buttons = [ Button(' %s ' % x) for x in choices ]
+        self.subwidgets += self.option_buttons
+        for i,btn in enumerate(self.option_buttons):
             btn.callback = (lambda j: lambda buttonnr: self.choice_clicked(j))(i)
         self.normalbg = '#303030'
         self.normalfg = '#ffffff'
@@ -122,37 +113,39 @@ class Switcher(Widget):
         self.selection = selection
     def choice_clicked(self, idx):
         self.selection = idx
-    def render(self):
-        buf = self.pad_left
-        buf += '%{B' + self.normalbg + '}%{+o}%{+u}%{U' + self.normalbg + '} '
-        for i, btn in enumerate(self.buttons):
+    def render(self, p):
+        p.fg(self.normalfg)
+        p.bg(self.normalbg)
+        p.ul(self.normalbg)
+        p.set_flag(p.overline | p.underline, True)
+        for i, btn in enumerate(self.option_buttons):
             if i == self.selection:
-                buf += '%%{B%s}%%{F%s}' % (self.focusbg, self.focusfg)
-            buf += btn.render()
+                p.fg(self.focusfg)
+                p.bg(self.focusbg)
+            p.widget(btn)
             if i == self.selection:
-                buf += '%%{B%s}%%{F%s}' % (self.normalbg, self.normalfg)
-        buf += ' %{B-}%{-o}%{-u}%{F-}'
-        buf += self.pad_right
-        return buf
+                p.fg(self.normalfg)
+                p.bg(self.normalbg)
+                p.ul(self.normalbg)
+        p.bg()
+        p.fg()
+        p.ul()
+        p.set_flag(p.overline | p.underline, False)
 
 class StackedLayout(Widget):
     def __init__(self, widgets, selection=0):
         super(StackedLayout,self).__init__()
         self.widgets = widgets
         self.selection = selection
-        self.subwidgets = widgets
-    def render(self):
-        buf = ""
-        buf += self.pad_left
-        buf += self.widgets[self.selection].render()
-        buf += self.pad_right
-        return buf
+        self.subwidgets += widgets
+    def render(self,painter):
+        painter.widget(self.widgets[self.selection])
     def can_handle_input(self, click_id, btn):
         return self.widgets[self.selection].can_handle_input(click_id, btn)
 
 class TabbedLayout(StackedLayout):
     def __init__(self, tabs, selection = 0):
-        # tabs is a list of paris, where the first element is the title
+        # tabs is a list of pairs, where the first element is the title
         # and the second element is the widget
         self.tabs = tabs
         super(TabbedLayout,self).__init__([w[1] for w in tabs], selection)
@@ -166,19 +159,17 @@ class TabbedLayout(StackedLayout):
         if self.tab_label.can_handle_input(click_id, btn):
             return True
         return super(TabbedLayout,self).can_handle_input(click_id, btn)
-    def render(self):
-        buf = ""
-        buf += self.tab_label.render()
-        buf += super(TabbedLayout,self).render()
-        return buf
+    def render(self,painter):
+        painter.widget(self.tab_label)
+        super(TabbedLayout,self).render(painter)
 
 class ShortLongLayout(TabbedLayout):
     def __init__(self, shortwidget, longwidget, longdefault = False):
         # tabs is a list of paris, where the first element is the title
         # and the second element is the widget
         tabs = [
-            ('%{F#A0A0A0}+%{F-}', shortwidget),
-            ('%{F#A0A0A0}-%{F-}', longwidget),
+            ('< ', shortwidget),
+            ('> ', longwidget),
         ]
         super(ShortLongLayout,self).__init__(tabs, selection = (1 if longdefault else 0))
 
@@ -188,8 +179,6 @@ class ListLayout(Widget):
         super(ListLayout,self).__init__()
         self.widgets = widgets
         self.subwidgets = widgets
-    def render(self):
-        buf = ''
+    def render(self, painter):
         for w in self.widgets:
-            buf += w.render()
-        return buf
+            painter.widget(w)
