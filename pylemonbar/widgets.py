@@ -42,8 +42,8 @@ class Widget:
             some_timeout = w.maybe_timeout(now) or some_timeout
         if self.timer_interval and self.last_timeout + self.timer_interval <= now:
             self.last_timeout = now
-            self.timeout()
-            some_timeout = True
+            #print("timeout for " + str(self))
+            some_timeout = self.timeout() or some_timeout
         return some_timeout
     def render(self, painter):
         painter += 'widget'
