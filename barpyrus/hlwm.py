@@ -101,13 +101,14 @@ class HLWMTagInfo:
         painter.set_flag(painter.overline, False)
 
 class HLWMTags(Widget):
-    def __init__(self,hlwm,monitor):
+    def __init__(self,hlwm,monitor, tag_renderer = None):
         super(HLWMTags,self).__init__()
         self.needs_update = True
         self.tags = [ ]
         self.tag_info = [ ]
         self.tag_count = 0
         self.buttons = [4, 5]
+        self.tag_renderer = tag_renderer
         self.monitor = monitor
         self.activecolor = hc('attr theme.tiling.active.color'.split(' '))
         self.emphbg = '#303030'
@@ -125,7 +126,10 @@ class HLWMTags(Widget):
             btn = Button('')
             btn.callback = (lambda j: lambda b: self.tag_clicked(j, b))(i)
             tag_info = HLWMTagInfo()
-            btn.pre_render = tag_info.render
+            if self.tag_renderer:
+                btn.pre_render = (lambda t: lambda p: self.tag_renderer(t,p))(tag_info)
+            else:
+                btn.pre_render = tag_info.render
             self.tags.append(btn)
             self.subwidgets.append(btn)
             self.tag_info.append(tag_info)

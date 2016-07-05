@@ -42,6 +42,43 @@ def main(argv):
     #session_button = Button('V')
     #session_button.callback = session_menu
 
+    def tag_renderer(self, painter): # self is a HLWMTagInfo object
+        if self.empty:
+            return
+        painter.bg(self.emphbg if self.here else None)
+        painter.set_flag(painter.overline, True if self.visible else False)
+        painter.fg('#a0a0a0' if self.occupied else '#909090')
+        if self.urgent:
+            painter.bg('#eeD6156C')
+            painter.set_flag(Painter.overline, False)
+        if self.focused:
+            painter.fg('#ffffff')
+            painter.ol(self.activecolor)
+        else:
+            painter.ol('#454545')
+        painter.space(4)
+        if self.name == 'irc':
+            #painter.symbol(0xe1ec)
+            #painter.symbol(0xe1a1)
+            painter.symbol(0xe1ef)
+        elif self.name == 'vim':
+            painter.symbol(0xe1cf)
+        elif self.name == 'web':
+            painter.symbol(0xe19c)
+        elif self.name == 'mail':
+            #painter.symbol(0xe1a8)
+            painter.symbol(0xe071)
+        elif self.name == 'scratchpad':
+            painter.symbol(0xe022)
+        elif self.name == '5':
+            painter.symbol(0xe05c)
+        else:
+            painter += self.name
+        painter.space(4)
+        painter.bg()
+        painter.ol()
+        painter.set_flag(painter.overline, False)
+
     grey_frame = Theme(bg = '#303030', fg = '#EFEFEF', padding = (3,3))
     time_widget = DateTime()
     short_time = DateTime('%H:%M')
@@ -56,7 +93,7 @@ def main(argv):
     kbdswitcher = HLWMLayoutSwitcher(hc_idle, xkblayouts, command = setxkbmap.split(' '))
     bar.widget = ListLayout([
                 RawLabel('%{l}'),
-                HLWMTags(hc_idle, monitor),
+                HLWMTags(hc_idle, monitor, tag_renderer = tag_renderer),
                 #Counter(),
                 RawLabel('%{c}'),
                 HLWMMonitorFocusLayout(hc_idle, monitor,
