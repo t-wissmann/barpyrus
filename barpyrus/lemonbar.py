@@ -9,6 +9,7 @@ class Lemonbar(EventInput):
             (x,y,w,h) = geometry
             command += [ '-g', "%dx%d%+d%+d" % (w,h,x,y)  ]
         command += '-a 100 -d -u 2 -B #ee121212 -f -*-fixed-medium-*-*-*-12-*-*-*-*-*-*-*'.split(' ')
+        command += '-f -*-*-*-*-*-*-2-*-*-*-*-*-*-*'.split(' ')
         command += '-f -wuncon-siji-medium-r-normal--10-100-75-75-c-80-iso10646-1'.split(' ')
         super(Lemonbar,self).__init__(command)
         self.widget = None
@@ -51,9 +52,11 @@ class Lemonbar(EventInput):
         def ol(self, color = None):
             self.linecolor(color)
         def symbol(self, symbol):
-            self.buf += '%{T1}' + chr(symbol) + '%{T-}'
+            self.buf += '%{T3}' + chr(symbol) + '%{T-}'
         def flush(self):
             self.lemonbar.write_flushed(self.buf + '\n')
+        def space(self, width):
+            self.buf += '%{T2}' + (' ' * width) + '%{T-}'
         def _enter_clickable(self, clickable):
             for b in clickable.buttons:
                 clickname = str(id(clickable.obj)) + '_' + str(b)

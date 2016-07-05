@@ -102,7 +102,7 @@ class DateTime(Label):
 class Switcher(Widget):
     def __init__(self,choices,selection=0):
         super(Switcher,self).__init__()
-        self.option_buttons = [ Button(' %s ' % x) for x in choices ]
+        self.option_buttons = [ Button(x) for x in choices ]
         self.subwidgets += self.option_buttons
         for i,btn in enumerate(self.option_buttons):
             btn.callback = (lambda j: lambda buttonnr: self.choice_clicked(j))(i)
@@ -118,15 +118,19 @@ class Switcher(Widget):
         p.bg(self.normalbg)
         p.ul(self.normalbg)
         p.set_flag(p.overline | p.underline, True)
+        p.space(3)
         for i, btn in enumerate(self.option_buttons):
             if i == self.selection:
                 p.fg(self.focusfg)
                 p.bg(self.focusbg)
+            p.space(3)
             p.widget(btn)
+            p.space(3)
             if i == self.selection:
                 p.fg(self.normalfg)
                 p.bg(self.normalbg)
                 p.ul(self.normalbg)
+        p.space(3)
         p.bg()
         p.fg()
         p.ul()

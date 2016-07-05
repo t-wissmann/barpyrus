@@ -84,6 +84,8 @@ class Painter:
         pass
     def flush(self):
         pass
+    def space(self, width): # insert some space of 'width' many units
+        pass
 
     class Clickable:
         def __init__(self, buttons, obj, callback):

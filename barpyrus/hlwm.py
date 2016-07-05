@@ -93,7 +93,9 @@ class HLWMTagInfo:
             painter.ol(self.activecolor)
         else:
             painter.ol('#454545')
-        painter += ' %s ' % self.name
+        painter.space(4)
+        painter += self.name
+        painter.space(4)
         painter.bg()
         painter.ol()
         painter.set_flag(painter.overline, False)
