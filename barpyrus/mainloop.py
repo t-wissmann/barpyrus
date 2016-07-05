@@ -49,9 +49,11 @@ def main(argv):
         painter.set_flag(painter.overline, True if self.visible else False)
         painter.fg('#a0a0a0' if self.occupied else '#909090')
         if self.urgent:
-            painter.bg('#eeD6156C')
-            painter.set_flag(Painter.overline, False)
-        if self.focused:
+            painter.ol('#FF7F27')
+            painter.fg('#FF7F27')
+            painter.set_flag(Painter.overline, True)
+            painter.bg('#57000F')
+        elif self.focused:
             painter.fg('#ffffff')
             painter.ol(self.activecolor)
         else:
