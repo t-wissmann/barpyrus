@@ -7,7 +7,7 @@ import select
 import os
 import math
 import struct
-from pylemonbar import widgets
+from barpyrus import widgets
 
 class EventInput:
     def __init__(self, command):

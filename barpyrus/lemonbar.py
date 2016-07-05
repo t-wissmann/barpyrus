@@ -1,6 +1,6 @@
 
-from pylemonbar.core import EventInput
-from pylemonbar.core import Painter
+from barpyrus.core import EventInput
+from barpyrus.core import Painter
 
 class Lemonbar(EventInput):
     def __init__(self, geometry = None):

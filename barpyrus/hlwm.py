@@ -8,13 +8,13 @@ import os
 import math
 import struct
 
-from pylemonbar.widgets import Widget
-from pylemonbar.widgets import Label
-from pylemonbar.widgets import Button
-from pylemonbar.widgets import Switcher
-from pylemonbar.widgets import StackedLayout
-from pylemonbar.core import EventInput
-from pylemonbar.core import Painter
+from barpyrus.widgets import Widget
+from barpyrus.widgets import Label
+from barpyrus.widgets import Button
+from barpyrus.widgets import Switcher
+from barpyrus.widgets import StackedLayout
+from barpyrus.core import EventInput
+from barpyrus.core import Painter
 
 def hc(args):
     cmd = [ "herbstclient", "-n" ]

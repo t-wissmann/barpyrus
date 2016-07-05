@@ -5,8 +5,8 @@ import time
 import sys
 import select
 import os
-from pylemonbar.widgets import RawLabel
-from pylemonbar.core import EventInput
+from barpyrus.widgets import RawLabel
+from barpyrus.core import EventInput
 
 class Conky(EventInput):
     def __init__(self, text='Conky $conky_version'):

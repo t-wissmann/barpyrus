@@ -9,11 +9,11 @@ import math
 import signal
 import struct
 
-from pylemonbar.core import *
-from pylemonbar.hlwm import *
-from pylemonbar.widgets import *
-from pylemonbar.conky import ConkyWidget
-from pylemonbar import lemonbar
+from barpyrus.core import *
+from barpyrus.hlwm import *
+from barpyrus.widgets import *
+from barpyrus.conky import ConkyWidget
+from barpyrus import lemonbar
 
 def main(argv):
     # ---- configuration ---

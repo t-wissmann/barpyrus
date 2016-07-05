@@ -8,7 +8,7 @@ import os
 import math
 import struct
 
-from pylemonbar import core
+from barpyrus import core
 
 class Widget:
     def __init__(self):
