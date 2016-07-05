@@ -44,11 +44,50 @@ class EventInput:
         self.proc.stdin.write(text.encode('utf-8'))
         self.proc.stdin.flush()
 
+class Theme:
+    def __init__(self, bg = None, fg = None, padding = (0,0), margin = (0,0)):
+        self.bg = bg
+        self.fg = fg
+        self.padding = padding
+        self.margin = margin
+    def begin_with_attributes(self, painter, widget):
+        if self.margin[0] != 0:
+            painter.space(self.margin[0])
+        painter.push()
+        if self.bg:
+            painter.bg(self.bg)
+        if self.fg:
+            painter.fg(self.fg)
+        if self.padding[0] != 0:
+            painter.space(self.padding[0])
+        self.begin(painter, widget)
+    def end_with_attributes(self, painter, widget):
+        self.end(painter,widget)
+        if self.padding[1] != 0:
+            painter.space(self.padding[1])
+        painter.pop()
+        if self.margin[1] != 0:
+            painter.space(self.margin[1])
+    def begin(self, painter, widget):
+        pass
+    def end(self, painter, widget):
+        pass
+    def __call__(self, widget):
+        widget.theme = self
+        return widget
+
 class Painter:
     underline = 0x01
     overline  = 0x02
     def __init__(self):
         self.flags = 0
+        self.stack = []
+    def push(self):
+        pass
+    def pop(self):
+        self.fg(None)
+        self.bg(None)
+        pass
     def drawRaw(self, text): # draw text and possibly interpret them as control characters
         pass
     def __iadd__(self, text): # draw a text savely
@@ -102,11 +141,15 @@ class Painter:
         if widget.buttons:
             clickable = Painter.Clickable(widget.buttons, widget, widget.on_click)
             self._enter_clickable(clickable)
+        if widget.theme:
+            widget.theme.begin_with_attributes(self, widget)
         if widget.pre_render:
             widget.pre_render(self)
         widget.render(self)
         if widget.post_render:
             widget.post_render(self)
+        if widget.theme:
+            widget.theme.end_with_attributes(self, widget)
         if widget.buttons:
             self._exit_clickable(clickable)
 

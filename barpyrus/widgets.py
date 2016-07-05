@@ -19,6 +19,7 @@ class Widget:
         self.post_render = None
         self.last_timeout = 0.0 # timestamp of the last timeout
         self.subwidgets = []
+        self.theme = None
     def timeout(self):
         # called on timeout. Return true if an update is needed
         return False

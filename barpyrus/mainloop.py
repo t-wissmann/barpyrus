@@ -42,6 +42,7 @@ def main(argv):
     #session_button = Button('V')
     #session_button.callback = session_menu
 
+    grey_frame = Theme(bg = '#303030', fg = '#EFEFEF', padding = (3,3))
     time_widget = DateTime()
     short_time = DateTime('%H:%M')
     hlwm_windowtitle = HLWMWindowTitle(hc_idle)
@@ -59,17 +60,17 @@ def main(argv):
                 #Counter(),
                 RawLabel('%{c}'),
                 HLWMMonitorFocusLayout(hc_idle, monitor,
-                                       hlwm_windowtitle, 
+                                       grey_frame(hlwm_windowtitle),
                                        ConkyWidget('df /: ${fs_used_perc /}%')
                                                 ),
                 RawLabel('%{r}'),
                 ConkyWidget('${if_existing /sys/class/power_supply/BAT0}B: ${battery_percent} $endif'),
                 ShortLongLayout(
-                    short_time,
+                    grey_frame(short_time),
                     ListLayout([
                         kbdswitcher,
                         RawLabel(' '),
-                        time_widget,
+                        grey_frame(time_widget),
                     ])),
     ])
 
