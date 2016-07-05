@@ -13,6 +13,7 @@ from pylemonbar.core import *
 from pylemonbar.hlwm import *
 from pylemonbar.widgets import *
 from pylemonbar.conky import ConkyWidget
+from pylemonbar import lemonbar
 
 def main(argv):
     # ---- configuration ---
@@ -29,7 +30,7 @@ def main(argv):
     height = 16
     hc(['pad', str(monitor), str(height)])
 
-    bar = Lemonbar(geometry = (x,y,width,height))
+    bar = lemonbar.Lemonbar(geometry = (x,y,width,height))
     hc_idle = HLWMInput()
 
     # widgets
