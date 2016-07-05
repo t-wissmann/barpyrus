@@ -9,6 +9,7 @@ import math
 import struct
 
 from barpyrus import core
+from barpyrus import core
 
 class Widget:
     def __init__(self):
@@ -59,6 +60,23 @@ class Widget:
             return False
     def on_click(self, button):
         pass
+
+    def render_themed(self,painter):
+        clickable = None
+        if self.buttons:
+            clickable = core.Painter.Clickable(self.buttons, self, self.on_click)
+            painter._enter_clickable(clickable)
+        if self.theme:
+            self.theme.begin_with_attributes(painter, self)
+        if self.pre_render:
+            self.pre_render(painter)
+        self.render(painter)
+        if self.post_render:
+            self.post_render(painter)
+        if self.theme:
+            self.theme.end_with_attributes(painter, self)
+        if self.buttons:
+            painter._exit_clickable(clickable)
 
 class RawLabel(Widget):
     def __init__(self,label):

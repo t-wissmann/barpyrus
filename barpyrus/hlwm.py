@@ -190,9 +190,9 @@ class HLWMWindowTitle(Label):
         if self.maxlen > len(self.windowtitle):
             self.maxlen = -1
         self.reset_label()
-    def render(self,painter):
+    def render_themed(self,painter):
         if self.label != '':
-            super(HLWMWindowTitle,self).render(painter)
+            super(HLWMWindowTitle,self).render_themed(painter)
 
 class HLWMLayoutSwitcher(Switcher):
     def __init__(self, hlwm, layouts, command = [ 'setxkbmap' ]):

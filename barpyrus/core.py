@@ -137,21 +137,7 @@ class Painter:
             self.callback = callback
 
     def widget(self, widget):
-        clickable = None
-        if widget.buttons:
-            clickable = Painter.Clickable(widget.buttons, widget, widget.on_click)
-            self._enter_clickable(clickable)
-        if widget.theme:
-            widget.theme.begin_with_attributes(self, widget)
-        if widget.pre_render:
-            widget.pre_render(self)
-        widget.render(self)
-        if widget.post_render:
-            widget.post_render(self)
-        if widget.theme:
-            widget.theme.end_with_attributes(self, widget)
-        if widget.buttons:
-            self._exit_clickable(clickable)
+        widget.render_themed(self)
 
     # draw the start of a clickable area
     def _enter_clickable(self, clickable):
