@@ -67,7 +67,7 @@ class Lemonbar(EventInput):
                 self.buf += '%{A}'
     def painter(self):
         return Lemonbar.LBPainter(self)
-    def textpainter(self, actions):
+    def textpainter(self, actions = lambda x: True):
         p = LBPainter(None)
         actions(p)
         return p.buf

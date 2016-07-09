@@ -15,6 +15,11 @@ from barpyrus.widgets import *
 from barpyrus.conky import ConkyWidget
 from barpyrus import lemonbar
 
+def get_config(filepath):
+    with open(filepath) as f:
+        code = compile(f.read(), filepath, 'exec')
+        exec(code, global_vars, local_vars)
+
 def main(argv):
     # ---- configuration ---
     if len(argv) >= 2:
@@ -81,6 +86,30 @@ def main(argv):
         painter.ol()
         painter.set_flag(painter.overline, False)
 
+    bat_icons = [
+        0xe242, 0xe243, 0xe244, 0xe245, 0xe246,
+        0xe247, 0xe248, 0xe249, 0xe24a, 0xe24b,
+    ]
+    # first icon: 0 percent
+    # last icon: 100 percent
+    bat_delta = 100 / (len(bat_icons) - 1)
+    conky_text = "${if_existing /sys/class/power_supply/BAT0}%{T2}"
+    conky_text += "${if_match \"$battery\" == \"discharging $battery_percent%\"}"
+    conky_text += "%{F\\#FFC726}"
+    conky_text += "$else"
+    conky_text += "%{F\\#9fbc00}"
+    conky_text += "$endif"
+    for i,icon in enumerate(bat_icons[:-1]):
+        conky_text += "${if_match \"$battery_percent\" < \"%d\"}" % ((i+1)*bat_delta)
+        conky_text += chr(icon)
+        conky_text += "$else"
+    conky_text += chr(bat_icons[-1])
+    for _ in bat_icons[:-1]:
+        conky_text += "$endif"
+    conky_text += "$endif"
+    conky_text += "%{F-}"
+    conky_text += "%{T-} "
+
     grey_frame = Theme(bg = '#303030', fg = '#EFEFEF', padding = (3,3))
     time_widget = DateTime()
     short_time = DateTime('%H:%M')
@@ -103,7 +132,7 @@ def main(argv):
                                        ConkyWidget('df /: ${fs_used_perc /}%')
                                                 ),
                 RawLabel('%{r}'),
-                ConkyWidget('${if_existing /sys/class/power_supply/BAT0}B: ${battery_percent} $endif'),
+                ConkyWidget(text= conky_text),
                 ShortLongLayout(
                     grey_frame(short_time),
                     ListLayout([
