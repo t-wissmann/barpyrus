@@ -9,29 +9,32 @@ from barpyrus.widgets import RawLabel
 from barpyrus.core import EventInput
 
 class Conky(EventInput):
-    def __init__(self, text='Conky $conky_version'):
+    def __init__(self, text='Conky $conky_version', config = { }):
         command = [ 'conky', '-c' , '-' ]
         super(Conky,self).__init__(command)
-        config = """
-conky.config = {
-    out_to_console = true,
-    out_to_x = false,
-    update_interval = 20,
-    background = false,
-    default_bar_width = 5,
-};
-
-conky.text = [[
-%s
-]];
-""" % text
-        self.write_flushed(config);
+        default_config = {
+            'out_to_console': 'true',
+            'out_to_x': 'false',
+            'update_interval': '20',
+            'background': 'false',
+            'default_bar_width': '5',
+        }
+        for key,val in config.items():
+            default_config[key] = val
+        config_str = "conky.config = {\n"
+        for key,val in default_config.items():
+            config_str += "    %s = %s,\n" % (key,str(val))
+        config_str += "};\n"
+        config_str += "conky.text = [[\n"
+        config_str += text
+        config_str += "\n]];\n"
+        self.write_flushed(config_str);
         self.proc.stdin.close()
 
 class ConkyWidget(RawLabel):
-    def __init__(self, text='Conky $conky_version'):
+    def __init__(self, text='Conky $conky_version', config = { }):
         super(ConkyWidget,self).__init__("")
-        self.conky = Conky(text=text)
+        self.conky = Conky(text=text, config=config)
         self.conky.callback = lambda line: self.update_label(line)
     def update_label(self, line):
         self.label = line
