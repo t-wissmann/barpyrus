@@ -92,23 +92,25 @@ def main(argv):
     ]
     # first icon: 0 percent
     # last icon: 100 percent
-    bat_delta = 100 / (len(bat_icons) - 1)
-    conky_text = "${if_existing /sys/class/power_supply/BAT0}%{T2}"
+    bat_delta = 100 / len(bat_icons)
+    conky_text = "${if_existing /sys/class/power_supply/BAT0}"
+    conky_text += "%{T2}"
     conky_text += "${if_match \"$battery\" == \"discharging $battery_percent%\"}"
     conky_text += "%{F\\#FFC726}"
     conky_text += "$else"
     conky_text += "%{F\\#9fbc00}"
     conky_text += "$endif"
     for i,icon in enumerate(bat_icons[:-1]):
-        conky_text += "${if_match \"$battery_percent\" < \"%d\"}" % ((i+1)*bat_delta)
+        conky_text += "${if_match $battery_percent < %d}" % ((i+1)*bat_delta)
         conky_text += chr(icon)
-        conky_text += "$else"
-    conky_text += chr(bat_icons[-1])
+        conky_text += "${else}"
+    conky_text += chr(bat_icons[-1]) # icon for 100 percent
     for _ in bat_icons[:-1]:
-        conky_text += "$endif"
-    conky_text += "$endif"
+        conky_text += "${endif}"
+    conky_text += "${endif}"
+    conky_text += "%{T-} $battery_percent% "
     conky_text += "%{F-}"
-    conky_text += "%{T-} "
+    print(conky_text)
 
     grey_frame = Theme(bg = '#303030', fg = '#EFEFEF', padding = (3,3))
     time_widget = DateTime()
