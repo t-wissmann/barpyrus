@@ -35,6 +35,10 @@ def main(argv):
     width = monitor_w
     height = 16
     hc(['pad', str(monitor), str(height)])
+    if int(hc(['get', 'smart_frame_surroundings'])) == 0:
+        frame_gap = int(hc(['get', 'frame_gap']))
+        x += frame_gap
+        width -= 2 * frame_gap
 
     bar = lemonbar.Lemonbar(geometry = (x,y,width,height))
     hc_idle = HLWMInput()
@@ -53,20 +57,21 @@ def main(argv):
     def tag_renderer(self, painter): # self is a HLWMTagInfo object
         if self.empty:
             return
-        painter.bg(self.emphbg if self.here else None)
-        painter.set_flag(painter.overline, True if self.visible else False)
+        #painter.ol('#ffffff' if self.focused else None)
+        painter.set_flag(painter.underline, True if self.visible else False)
         painter.fg('#a0a0a0' if self.occupied else '#909090')
         if self.urgent:
             painter.ol('#FF7F27')
             painter.fg('#FF7F27')
-            painter.set_flag(Painter.overline, True)
+            painter.set_flag(Painter.underline, True)
             painter.bg('#57000F')
-        elif self.focused:
+        elif self.here:
             painter.fg('#ffffff')
-            painter.ol(self.activecolor)
+            painter.ol(self.activecolor if self.focused else '#ffffff')
+            painter.bg(self.emphbg)
         else:
             painter.ol('#454545')
-        painter.space(4)
+        painter.space(3)
         if self.name == 'irc':
             #painter.symbol(0xe1ec)
             #painter.symbol(0xe1a1)
@@ -84,10 +89,11 @@ def main(argv):
             painter.symbol(0xe05c)
         else:
             painter += self.name
-        painter.space(4)
+        painter.space(3)
         painter.bg()
         painter.ol()
-        painter.set_flag(painter.overline, False)
+        painter.set_flag(painter.underline, False)
+        painter.space(2)
 
     bat_icons = [
         0xe242, 0xe243, 0xe244, 0xe245, 0xe246,
