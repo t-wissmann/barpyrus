@@ -8,6 +8,7 @@ import os
 import math
 import signal
 import struct
+import locale
 
 from barpyrus.core import *
 from barpyrus.hlwm import *
@@ -37,6 +38,8 @@ def main(argv):
 
     bar = lemonbar.Lemonbar(geometry = (x,y,width,height))
     hc_idle = HLWMInput()
+    # import all locales
+    locale.setlocale(locale.LC_ALL, '')
 
     # widgets
     #rofi = DropdownRofi(y+height,x,width)
