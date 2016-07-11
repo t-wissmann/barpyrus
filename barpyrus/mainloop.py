@@ -34,7 +34,12 @@ def main(argv):
     monitor_h = int(geometry[3])
     width = monitor_w
     height = 16
-    hc(['pad', str(monitor), str(height)])
+    align_top = True
+    if align_top:
+        hc(['pad', str(monitor), str(height)])
+    else:
+        hc(['pad', str(monitor), '', '', str(height)])
+        y = y + monitor_h - height
     if int(hc(['get', 'smart_frame_surroundings'])) == 0:
         frame_gap = int(hc(['get', 'frame_gap']))
         x += frame_gap
