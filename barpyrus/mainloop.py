@@ -107,14 +107,12 @@ def main(argv):
     conky_text += chr(bat_icons[-1]) # icon for 100 percent
     for _ in bat_icons[:-1]:
         conky_text += "${endif}"
-    conky_text += "${endif}"
     conky_text += "%{T-} $battery_percent% "
+    conky_text += "${endif}"
     conky_text += "%{F-}"
     print(conky_text)
 
     grey_frame = Theme(bg = '#303030', fg = '#EFEFEF', padding = (3,3))
-    time_widget = DateTime()
-    short_time = DateTime('%H:%M')
     hlwm_windowtitle = HLWMWindowTitle(hc_idle)
     xkblayouts = [
         'us us -variant altgr-intl us'.split(' '),
@@ -136,27 +134,18 @@ def main(argv):
                 RawLabel('%{r}'),
                 ConkyWidget(text= conky_text),
                 ShortLongLayout(
-                    grey_frame(short_time),
+                    RawLabel(''),
                     ListLayout([
                         kbdswitcher,
                         RawLabel(' '),
-                        grey_frame(time_widget),
                     ])),
+                    grey_frame(DateTime('%d. %B, %H:%M')),
     ])
 
     inputs = [ hc_idle,
                bar
              ]
 
-    def nice_theme(widget):
-        #widget.pad_left  = '%{-o}%{B#303030} '
-        #widget.pad_right = ' %{-o}%{B-}'
-        pass
-
-    nice_theme(hlwm_windowtitle)
-    nice_theme(time_widget)
-    nice_theme(short_time)
-    #short_time.pad_left += '%{T1}%{F#9fbc00}\ue016%{T-}%{F-} '
     #time_widget.pad_left += '%{T1}%{F#9fbc00}\ue016%{T-}%{F-} '
     #kbdswitcher.pad_left += '%{B#303030}%{T1} %{F#9fbc00}\ue26f%{T-}%{F-}'
     def request_shutdown(args):
