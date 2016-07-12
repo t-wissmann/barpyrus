@@ -15,12 +15,14 @@ from barpyrus.widgets import Switcher
 from barpyrus.widgets import StackedLayout
 from barpyrus.core import EventInput
 from barpyrus.core import Painter
+from barpyrus import mainloop
 
 class HLWMInput(EventInput):
     def __init__(self):
         cmd = [ 'herbstclient', '--idle' ]
         self.hooks = { }
         super(HLWMInput,self).__init__(cmd)
+        self.enhook('quit_panel', lambda args: mainloop.quit_main_loop())
     def enhook(self,name,callback):
         self.hooks.setdefault(name,[]).append(callback)
     def handle_line(self,line):
@@ -51,6 +53,47 @@ class HLWMInput(EventInput):
 
 def connect():
     return HLWMInput()
+
+def underlined_tags(self, painter): # self is a HLWMTagInfo object
+    if self.empty:
+        return
+    #painter.ol('#ffffff' if self.focused else None)
+    painter.set_flag(painter.underline, True if self.visible else False)
+    painter.fg('#a0a0a0' if self.occupied else '#909090')
+    if self.urgent:
+        painter.ol('#FF7F27')
+        painter.fg('#FF7F27')
+        painter.set_flag(Painter.underline, True)
+        painter.bg('#57000F')
+    elif self.here:
+        painter.fg('#ffffff')
+        painter.ol(self.activecolor if self.focused else '#ffffff')
+        painter.bg(self.emphbg)
+    else:
+        painter.ol('#454545')
+    painter.space(3)
+    if self.name == 'irc':
+        #painter.symbol(0xe1ec)
+        #painter.symbol(0xe1a1)
+        painter.symbol(0xe1ef)
+    elif self.name == 'vim':
+        painter.symbol(0xe1cf)
+    elif self.name == 'web':
+        painter.symbol(0xe19c)
+    elif self.name == 'mail':
+        #painter.symbol(0xe1a8)
+        painter.symbol(0xe071)
+    elif self.name == 'scratchpad':
+        painter.symbol(0xe022)
+    elif self.name == '5':
+        painter.symbol(0xe05c)
+    else:
+        painter += self.name
+    painter.space(3)
+    painter.bg()
+    painter.ol()
+    painter.set_flag(painter.underline, False)
+    painter.space(2)
 
 class HLWMTagInfo:
     def __init__(self):
