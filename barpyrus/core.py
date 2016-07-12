@@ -9,6 +9,12 @@ import math
 import struct
 from barpyrus import widgets
 
+
+global_inputs = [ ]
+
+def add_global_input(inp):
+    global_inputs.append(inp)
+
 class EventInput:
     def __init__(self, command):
         self.command = command
@@ -16,6 +22,7 @@ class EventInput:
                                               stdin=subprocess.PIPE)
         self._buf = ''
         self.callback = None;
+        add_global_input(self)
     def fileno(self):
         return self.proc.stdout.fileno()
     # thanks to http://stackoverflow.com/questions/5486717/python-select-doesnt-signal-all-input-from-pipe

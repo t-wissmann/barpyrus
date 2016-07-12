@@ -171,22 +171,21 @@ def main(argv):
                     grey_frame(DateTime('%d. %B, %H:%M')),
     ])
 
-    inputs = [ hc_idle,
-               bar
-             ]
-
     #time_widget.pad_left += '%{T1}%{F#9fbc00}\ue016%{T-}%{F-} '
     #kbdswitcher.pad_left += '%{B#303030}%{T1} %{F#9fbc00}\ue26f%{T-}%{F-}'
     def request_shutdown(args):
         quit_main_loop()
     hc_idle.enhook('quit_panel', request_shutdown)
-    main_loop(bar, inputs)
+    main_loop(bar)
 
 def quit_main_loop():
     main_loop.shutdown_requested = True
 
-def main_loop(bar, inputs):
-    inputs += bar.widget.eventinputs()
+def main_loop(bar, inputs = None):
+    # TODO: remove eventinputs again?
+    #inputs += bar.widget.eventinputs()
+    if inputs == None:
+        inputs = global_inputs
 
     global_update = True
     main_loop.shutdown_requested = False
