@@ -124,7 +124,7 @@ def main(argv):
     conky_text += "%{T-} $battery_percent% "
     conky_text += "${endif}"
     conky_text += "%{F-}"
-    print(conky_text)
+    #print(conky_text)
 
     grey_frame = Theme(bg = '#303030', fg = '#EFEFEF', padding = (3,3))
     hlwm_windowtitle = HLWMWindowTitle(hc_idle)
