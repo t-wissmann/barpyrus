@@ -9,29 +9,41 @@ import math
 import signal
 import struct
 import locale
+import os
 
 from barpyrus.core import *
-from barpyrus.hlwm import *
+from barpyrus import hlwm
 from barpyrus.widgets import *
 from barpyrus.conky import ConkyWidget
 from barpyrus import lemonbar
 
 def get_config(filepath):
+    global_vars = {}
     with open(filepath) as f:
         code = compile(f.read(), filepath, 'exec')
-        exec(code, global_vars, local_vars)
+        exec(code, global_vars)
+    return global_vars
+
+def user_config_path():
+    if 'XDG_CONFIG_DIR' in os.environ:
+        path = os.environ['XDG_CONFIG_DIR']
+    elif 'HOME' in os.environ:
+        path = os.path.join(os.environ['HOME'], '.config')
+    else:
+        path = '.'
+    return os.path.join(path, 'barpyrus', 'config.py')
+
+def get_user_config():
+    return get_config(user_config_path())
 
 def main(argv):
+    #conf = get_user_config()
+    #return 0
     # ---- configuration ---
-    if len(argv) >= 2:
-        monitor = int(argv[1])
-    else:
-        monitor = 0
-    geometry = hc(['monitor_rect', str(monitor)]).split(' ')
-    x = int(geometry[0])
-    y = int(geometry[1])
-    monitor_w = int(geometry[2])
-    monitor_h = int(geometry[3])
+    hc = hlwm.connect()
+    hc_idle = hc
+    monitor = sys.argv[1] if len(sys.argv) >= 2 else 0
+    (x, y, monitor_w, monitor_h) = hc.monitor_rect()
     width = monitor_w
     height = 16
     align_top = True
@@ -46,7 +58,6 @@ def main(argv):
         width -= 2 * frame_gap
 
     bar = lemonbar.Lemonbar(geometry = (x,y,width,height))
-    hc_idle = HLWMInput()
     # import all locales
     locale.setlocale(locale.LC_ALL, '')
 
@@ -131,7 +142,7 @@ def main(argv):
     #print(conky_text)
 
     grey_frame = Theme(bg = '#303030', fg = '#EFEFEF', padding = (3,3))
-    hlwm_windowtitle = HLWMWindowTitle(hc_idle)
+    hlwm_windowtitle = hlwm.HLWMWindowTitle(hc_idle)
     xkblayouts = [
         'us us -variant altgr-intl us'.split(' '),
         'de de de'.split(' '),
@@ -139,13 +150,13 @@ def main(argv):
     setxkbmap = 'setxkbmap -option compose:menu -option ctrl:nocaps'
     setxkbmap += ' -option compose:ralt -option compose:rctrl'
 
-    kbdswitcher = HLWMLayoutSwitcher(hc_idle, xkblayouts, command = setxkbmap.split(' '))
+    kbdswitcher = hlwm.HLWMLayoutSwitcher(hc_idle, xkblayouts, command = setxkbmap.split(' '))
     bar.widget = ListLayout([
                 RawLabel('%{l}'),
-                HLWMTags(hc_idle, monitor, tag_renderer = tag_renderer),
+                hlwm.HLWMTags(hc_idle, monitor, tag_renderer = tag_renderer),
                 #Counter(),
                 RawLabel('%{c}'),
-                HLWMMonitorFocusLayout(hc_idle, monitor,
+                hlwm.HLWMMonitorFocusLayout(hc_idle, monitor,
                                        grey_frame(hlwm_windowtitle),
                                        ConkyWidget('df /: ${fs_used_perc /}%')
                                                 ),

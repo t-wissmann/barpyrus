@@ -16,13 +16,6 @@ from barpyrus.widgets import StackedLayout
 from barpyrus.core import EventInput
 from barpyrus.core import Painter
 
-def hc(args):
-    cmd = [ "herbstclient", "-n" ]
-    cmd += args;
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    proc.wait()
-    return proc.stdout.read().decode("utf-8")
-
 class HLWMInput(EventInput):
     def __init__(self):
         cmd = [ 'herbstclient', '--idle' ]
@@ -37,6 +30,27 @@ class HLWMInput(EventInput):
         if args[0] in self.hooks:
             for cb in self.hooks[args[0]]:
                 cb(args[1:])
+    def __call__(self,args):
+        cmd = [ "herbstclient", "-n" ]
+        cmd += args;
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+        proc.wait()
+        return proc.stdout.read().decode("utf-8")
+    def monitor_rect(hc, monitor = None):
+        if monitor == None:
+            if len(sys.argv) >= 2:
+                monitor = int(sys.argv[1])
+            else:
+                monitor = 0
+        geometry = hc(['monitor_rect', str(monitor)]).split(' ')
+        x = int(geometry[0])
+        y = int(geometry[1])
+        monitor_w = int(geometry[2])
+        monitor_h = int(geometry[3])
+        return (x,y, monitor_w, monitor_h)
+
+def connect():
+    return HLWMInput()
 
 class HLWMTagInfo:
     def __init__(self):
@@ -103,6 +117,7 @@ class HLWMTagInfo:
 class HLWMTags(Widget):
     def __init__(self,hlwm,monitor, tag_renderer = None):
         super(HLWMTags,self).__init__()
+        self.hc = hlwm
         self.needs_update = True
         self.tags = [ ]
         self.tag_info = [ ]
@@ -110,7 +125,7 @@ class HLWMTags(Widget):
         self.buttons = [4, 5]
         self.tag_renderer = tag_renderer
         self.monitor = monitor
-        self.activecolor = hc('attr theme.tiling.active.color'.split(' '))
+        self.activecolor = hlwm('attr theme.tiling.active.color'.split(' '))
         self.emphbg = '#303030'
         self.update_tags()
         hlwm.enhook('tag_changed', lambda a: self.update_tags(args = a))
@@ -119,7 +134,7 @@ class HLWMTags(Widget):
         hlwm.enhook('tag_removed', lambda a: self.update_tags(args = a))
 
     def update_tags(self, args = None):
-        strlist = hc(['tag_status', str(self.monitor)]).strip('\t').split('\t')
+        strlist = self.hc(['tag_status', str(self.monitor)]).strip('\t').split('\t')
         self.tag_count = len(strlist)
         # enlarge the tag button array
         for i in range(len(self.tags),len(strlist)):
@@ -138,10 +153,10 @@ class HLWMTags(Widget):
             self.tag_info[i].parse(strlist[i])
         self.needs_update = False
     def tag_clicked(self,tagindex,button):
-        cmd = 'chain , focus_monitor %d , use_index %d' % (self.monitor,tagindex)
+        cmd = 'chain , focus_monitor %s , use_index %d' % (str(self.monitor),tagindex)
         cmd = cmd.split(' ')
         #print(cmd)
-        hc(cmd)
+        self.hc(cmd)
     def render(self,painter):
         for t in self.tags:
             painter.widget(t)
@@ -161,11 +176,11 @@ class HLWMTags(Widget):
         else:
             delta = +1
         cmd = (cmd % (self.monitor,delta)).split(' ')
-        hc(cmd)
+        self.hc(cmd)
 
 class HLWMWindowTitle(Label):
     def __init__(self, hlwm, maxlen = -1):
-        self.windowtitle = hc(['attr', 'clients.focus.title'])
+        self.windowtitle = hlwm(['attr', 'clients.focus.title'])
         self.maxlen = maxlen
         super(HLWMWindowTitle,self).__init__('')
         self.buttons = [4 , 5]
@@ -202,11 +217,12 @@ class HLWMLayoutSwitcher(Switcher):
         self.layouts = layouts
         self.command = command
         self.titles = [ l[1] for l in layouts ]
+        self.hc = hlwm
         super(HLWMLayoutSwitcher,self).__init__(self.titles)
         hlwm.enhook('keyboard_layout', (lambda a: self.layoutswitched(a)))
     def choice_clicked(self,idx):
         l = self.layouts[idx]
-        hc(['emit_hook', 'keyboard_layout', l[0]])
+        self.hc(['emit_hook', 'keyboard_layout', l[0]])
         cmd = []
         cmd += self.command
         cmd += l[2:]
@@ -223,7 +239,7 @@ class HLWMMonitorFocusLayout(StackedLayout):
         self.wpassive = wpassive # widget that is shown if the monitor is not focused
         self.monitor = int(monitor) # monitor index to watch
         hlwm.enhook('tag_changed', (lambda a: self.anothermonitor(a)))
-        self.curmonitor = int(hc(['attr', 'monitors.focus.index']))
+        self.curmonitor = int(hlwm(['attr', 'monitors.focus.index']))
         super(HLWMMonitorFocusLayout,self).__init__([wpassive, wactive],
             selection = int(self.curmonitor == int(monitor)))
     def anothermonitor(self, args):
