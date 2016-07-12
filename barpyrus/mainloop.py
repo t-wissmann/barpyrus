@@ -107,7 +107,11 @@ def main(argv):
     # first icon: 0 percent
     # last icon: 100 percent
     bat_delta = 100 / len(bat_icons)
-    conky_text = "${if_existing /sys/class/power_supply/BAT0}"
+    conky_text = '%{F\\#9fbc00}%{T2}\ue026%{T-}%{F\\#989898}${cpu}% '
+    conky_text += '%{F\\#9fbc00}%{T2}\ue021%{T-}%{F\\#989898}${memperc}% '
+    conky_text += '%{F\\#9fbc00}%{T2}\ue13c%{T-}%{F\\#989898}${downspeedf}K '
+    conky_text += '%{F\\#9fbc00}%{T2}\ue13b%{T-}%{F\\#989898}${upspeedf}K '
+    conky_text += "${if_existing /sys/class/power_supply/BAT0}"
     conky_text += "%{T2}"
     conky_text += "${if_match \"$battery\" == \"discharging $battery_percent%\"}"
     conky_text += "%{F\\#FFC726}"

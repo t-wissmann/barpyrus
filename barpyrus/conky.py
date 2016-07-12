@@ -18,6 +18,7 @@ class Conky(EventInput):
             'update_interval': '20',
             'background': 'false',
             'default_bar_width': '5',
+            'use_spacer': 'none',
         }
         for key,val in config.items():
             default_config[key] = val
