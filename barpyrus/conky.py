@@ -9,7 +9,7 @@ from barpyrus.widgets import RawLabel
 from barpyrus.core import EventInput
 
 class Conky(EventInput):
-    def __init__(self, text='Conky $conky_version', config = { }):
+    def __init__(self, text='Conky $conky_version', config = { }, lua = ""):
         command = [ 'conky', '-c' , '-' ]
         super(Conky,self).__init__(command)
         default_config = {
@@ -26,6 +26,7 @@ class Conky(EventInput):
         for key,val in default_config.items():
             config_str += "    %s = %s,\n" % (key,str(val))
         config_str += "};\n"
+        config_str += lua + "\n"
         config_str += "conky.text = [[\n"
         config_str += text
         config_str += "\n]];\n"
@@ -33,9 +34,9 @@ class Conky(EventInput):
         self.proc.stdin.close()
 
 class ConkyWidget(RawLabel):
-    def __init__(self, text='Conky $conky_version', config = { }):
+    def __init__(self, text='Conky $conky_version', config = { }, lua = ""):
         super(ConkyWidget,self).__init__("")
-        self.conky = Conky(text=text, config=config)
+        self.conky = Conky(text=text, config=config, lua=lua)
         self.conky.callback = lambda line: self.update_label(line)
     def update_label(self, line):
         self.label = line
