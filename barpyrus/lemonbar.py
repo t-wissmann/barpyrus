@@ -3,14 +3,18 @@ from barpyrus.core import EventInput
 from barpyrus.core import Painter
 
 class Lemonbar(EventInput):
-    def __init__(self, geometry = None):
+    def __init__(self, geometry = None,
+                 font = '-*-fixed-medium-*-*-*-12-*-*-*-*-*-*-*',
+                 symbol_font = '-wuncon-siji-medium-r-normal--10-100-75-75-c-80-iso10646-1'):
         command = [ "lemonbar" ]
         if geometry:
             (x,y,w,h) = geometry
             command += [ '-g', "%dx%d%+d%+d" % (w,h,x,y)  ]
-        command += '-a 100 -d -u 2 -B #ee121212 -f -*-fixed-medium-*-*-*-12-*-*-*-*-*-*-*'.split(' ')
+        command += '-a 100 -d -u 2 -B #ee121212'.split(' ')
+        command += [ '-f', font ]
         command += '-f -*-*-*-*-*-*-2-*-*-*-*-*-*-*'.split(' ')
-        command += '-f -wuncon-siji-medium-r-normal--10-100-75-75-c-80-iso10646-1'.split(' ')
+        if symbol_font != None:
+            command += [ '-f', symbol_font ]
         super(Lemonbar,self).__init__(command)
         self.widget = None
         self.clickareas = { }
