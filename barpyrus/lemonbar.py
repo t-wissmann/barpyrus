@@ -5,7 +5,8 @@ from barpyrus.core import Painter
 class Lemonbar(EventInput):
     def __init__(self, geometry = None,
                  font = '-*-fixed-medium-*-*-*-12-*-*-*-*-*-*-*',
-                 symbol_font = '-wuncon-siji-medium-r-normal--10-100-75-75-c-80-iso10646-1'):
+                 symbol_font = '-wuncon-siji-medium-r-normal--10-100-75-75-c-80-iso10646-1',
+                 args = []):
         command = [ "lemonbar" ]
         if geometry:
             (x,y,w,h) = geometry
@@ -13,6 +14,7 @@ class Lemonbar(EventInput):
         command += '-a 100 -d -u 2 -B #ee121212'.split(' ')
         command += [ '-f', font ]
         command += '-f -*-*-*-*-*-*-2-*-*-*-*-*-*-*'.split(' ')
+        command += args
         if symbol_font != None:
             command += [ '-f', symbol_font ]
         super(Lemonbar,self).__init__(command)
