@@ -21,6 +21,7 @@ class Widget:
         self.last_timeout = 0.0 # timestamp of the last timeout
         self.subwidgets = []
         self.theme = None
+        self.custom_render = None # here the user can override a widgets render()
     def timeout(self):
         # called on timeout. Return true if an update is needed
         return False
@@ -70,7 +71,10 @@ class Widget:
             self.theme.begin_with_attributes(painter, self)
         if self.pre_render:
             self.pre_render(painter)
-        self.render(painter)
+        if self.custom_render:
+            self.custom_render(self, painter)
+        else:
+            self.render(painter)
         if self.post_render:
             self.post_render(painter)
         if self.theme:
@@ -167,12 +171,14 @@ class StackedLayout(Widget):
         return self.widgets[self.selection].can_handle_input(click_id, btn)
 
 class TabbedLayout(StackedLayout):
-    def __init__(self, tabs, selection = 0):
+    def __init__(self, tabs, selection = 0, tab_renderer = None):
         # tabs is a list of pairs, where the first element is the title
         # and the second element is the widget
         self.tabs = tabs
         super(TabbedLayout,self).__init__([w[1] for w in tabs], selection)
         self.tab_label = Button(tabs[selection][0])
+        if tab_renderer != None:
+            self.tab_label.custom_render = tab_renderer
         self.tab_label.callback = lambda buttonnr: self.on_click()
     def on_click(self):
         self.selection += 1
