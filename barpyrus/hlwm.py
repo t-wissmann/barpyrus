@@ -196,7 +196,7 @@ class HLWMTags(Widget):
             self.tag_info[i].parse(strlist[i])
         self.needs_update = False
     def tag_clicked(self,tagindex,button):
-        cmd = 'chain , focus_monitor %s , use_index %d' % (str(self.monitor),tagindex)
+        cmd = 'chain , focus_monitor %s , use_index %s' % (str(self.monitor),str(tagindex))
         cmd = cmd.split(' ')
         #print(cmd)
         self.hc(cmd)
@@ -213,12 +213,12 @@ class HLWMTags(Widget):
             return False
         return False
     def on_click(self, b):
-        cmd = 'chain , focus_monitor %d , use_index %+d --skip-visible'
+        cmd = 'chain , focus_monitor %s , use_index %+d --skip-visible'
         if b == 4:
             delta = -1
         else:
             delta = +1
-        cmd = (cmd % (self.monitor,delta)).split(' ')
+        cmd = (cmd % (str(self.monitor),delta)).split(' ')
         self.hc(cmd)
 
 class HLWMWindowTitle(Label):
