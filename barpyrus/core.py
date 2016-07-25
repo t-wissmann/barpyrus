@@ -52,11 +52,13 @@ class EventInput:
         self.proc.stdin.flush()
 
 class Theme:
-    def __init__(self, bg = None, fg = None, padding = (0,0), margin = (0,0)):
+    def __init__(self, bg = None, fg = None, padding = (0,0), margin = (0,0), begin = None, end = None):
         self.bg = bg
         self.fg = fg
         self.padding = padding
         self.margin = margin
+        self.begin_cb = begin
+        self.end_cb = end
     def begin_with_attributes(self, painter, widget):
         if self.margin[0] != 0:
             painter.space(self.margin[0])
@@ -76,9 +78,11 @@ class Theme:
         if self.margin[1] != 0:
             painter.space(self.margin[1])
     def begin(self, painter, widget):
-        pass
+        if self.begin_cb:
+            self.begin_cb(self, painter, widget)
     def end(self, painter, widget):
-        pass
+        if self.end_cb:
+            self.end_cb(self, painter, widget)
     def __call__(self, widget):
         widget.theme = self
         return widget
