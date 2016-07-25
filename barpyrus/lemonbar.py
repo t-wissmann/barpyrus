@@ -14,9 +14,9 @@ class Lemonbar(EventInput):
         command += '-a 100 -d -u 2 -B #ee121212'.split(' ')
         command += [ '-f', font ]
         command += '-f -*-*-*-*-*-*-2-*-*-*-*-*-*-*'.split(' ')
-        command += args
         if symbol_font != None:
             command += [ '-f', symbol_font ]
+        command += args
         super(Lemonbar,self).__init__(command)
         self.widget = None
         self.clickareas = { }
