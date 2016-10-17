@@ -234,10 +234,10 @@ class HLWMWindowTitle(Label):
         self.windowtitle = args[1] if len(args) >= 2 else ''
         self.reset_label()
     def reset_label(self):
-        if self.maxlen < 0:
+        if self.maxlen < 0 or len(self.windowtitle) <= self.maxlen:
             self.label = self.windowtitle
         else:
-            self.label = self.windowtitle[:self.maxlen]
+            self.label = self.windowtitle[:self.maxlen-1] + '…'
     def on_click(self, b):
         if self.maxlen > len(self.windowtitle) or self.maxlen < 0:
             self.maxlen = len(self.windowtitle)
