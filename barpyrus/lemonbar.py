@@ -4,7 +4,7 @@ from barpyrus.core import Painter
 
 class Lemonbar(EventInput):
     def __init__(self, geometry = None,
-                 font = '-*-fixed-medium-*-*-*-12-*-*-*-*-*-*-*',
+                 font = '-*-fixed-medium-*-*-*-12-*-*-*-*-*-iso10646-1',
                  symbol_font = '-wuncon-siji-medium-r-normal--10-100-75-75-c-80-iso10646-1',
                  args = []):
         command = [ "lemonbar" ]
