@@ -34,6 +34,8 @@ class Widget:
         next_to = None
         for w in self.subwidgets:
             to = w.next_timeout()
+            if to == None:
+                continue
             next_to = min(next_to, to) if next_to != None else to
         if self.timer_interval:
             to = self.last_timeout + self.timer_interval
