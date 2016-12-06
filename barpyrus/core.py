@@ -7,7 +7,6 @@ import select
 import os
 import math
 import struct
-from barpyrus import widgets
 
 
 global_inputs = [ ]
