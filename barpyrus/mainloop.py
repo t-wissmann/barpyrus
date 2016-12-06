@@ -46,9 +46,6 @@ def main(argv):
     bar = conf['bar']
     main_loop(bar)
 
-def quit_main_loop():
-    main_loop.shutdown_requested = True
-
 def main_loop(bar, inputs = None):
     # TODO: remove eventinputs again?
     #inputs += bar.widget.eventinputs()
@@ -56,14 +53,13 @@ def main_loop(bar, inputs = None):
         inputs = global_inputs
 
     global_update = True
-    main_loop.shutdown_requested = False
     def signal_quit(signal, frame):
         quit_main_loop()
     signal.signal(signal.SIGINT, signal_quit)
     signal.signal(signal.SIGTERM, signal_quit)
 
     # main loop
-    while not main_loop.shutdown_requested and bar.is_running():
+    while not core.shutdown_requested() and bar.is_running():
         now = time.clock_gettime(time.CLOCK_MONOTONIC)
         if bar.widget.maybe_timeout(now):
             global_update = True
@@ -90,7 +86,7 @@ def main_loop(bar, inputs = None):
             next_timeout = max(next_timeout,0.1)
             #print("next timeout = " + str(next_timeout))
             data_ready = select.select(inputs,[],[], next_timeout)[0]
-            if main_loop.shutdown_requested:
+            if core.shutdown_requested():
                 break
         if not data_ready:
             pass #print('timeout!')

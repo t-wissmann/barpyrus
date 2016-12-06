@@ -11,6 +11,15 @@ import struct
 
 global_inputs = [ ]
 
+# ask the main loop to quit soon
+def quit_main_loop():
+    shutdown_requested.value = True
+
+# returns whether the shutdown of the main loop has been requested
+def shutdown_requested():
+    return shutdown_requested.value
+shutdown_requested.value = False
+
 def add_global_input(inp):
     global_inputs.append(inp)
 

@@ -15,14 +15,14 @@ from barpyrus.widgets import Switcher
 from barpyrus.widgets import StackedLayout
 from barpyrus.core import EventInput
 from barpyrus.core import Painter
-from barpyrus import mainloop
+from barpyrus.core import quit_main_loop
 
 class HLWMInput(EventInput):
     def __init__(self):
         cmd = [ 'herbstclient', '--idle' ]
         self.hooks = { }
         super(HLWMInput,self).__init__(cmd)
-        self.enhook('quit_panel', lambda args: mainloop.quit_main_loop())
+        self.enhook('quit_panel', lambda args: quit_main_loop())
     def enhook(self,name,callback):
         self.hooks.setdefault(name,[]).append(callback)
     def handle_line(self,line):
