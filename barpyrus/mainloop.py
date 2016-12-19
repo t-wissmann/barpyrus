@@ -38,7 +38,7 @@ def user_config_path():
 def get_user_config():
     return get_config(user_config_path())
 
-def main(argv):
+def main():
     # import all locales
     locale.setlocale(locale.LC_ALL, '')
     # ---- configuration ---

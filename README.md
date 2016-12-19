@@ -15,6 +15,7 @@ You need to have the following things installed:
 - [siji font](https://github.com/stark/siji)
 - [herbstluftwm](https://github.com/herbstluftwm/herbstluftwm)
 - conky (only if you want to use the conky widget)
+- setuptools if installing via `setup.py`
 
 ## Usage in herbstluftwm
 To install it type:
