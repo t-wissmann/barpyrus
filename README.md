@@ -29,3 +29,6 @@ If you just want to have a quick look, you can run it directly:
 ```
 ./barpyrus.py
 ```
+
+## License
+barpyrus is licensed under the [simplified BSD license](LICENSE).
