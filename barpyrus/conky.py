@@ -75,6 +75,7 @@ class ConkyGenerator:
         yield
         for _ in range(self._cases):
             self._text += '$endif'
+        self._cases = None
 
     def case(self, text):
         if self._cases is None:
