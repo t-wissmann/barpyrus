@@ -7,6 +7,7 @@ class Lemonbar(EventInput):
                  font = '-*-fixed-medium-*-*-*-12-*-*-*-*-*-iso10646-1',
                  symbol_font = '-wuncon-siji-medium-r-normal--10-100-75-75-c-80-iso10646-1',
                  background = '#ee121212',
+                 foreground = '#989898',
                  args = []):
         command = [ "lemonbar" ]
         if geometry:
@@ -14,6 +15,7 @@ class Lemonbar(EventInput):
             command += [ '-g', "%dx%d%+d%+d" % (w,h,x,y)  ]
         command += '-a 100 -d -u 2'.split(' ')
         command += [ '-B', background  ]
+        command += [ '-F', foreground  ]
         command += [ '-f', font  ]
         command += '-f -*-*-*-*-*-*-2-*-*-*-*-*-*-*'.split(' ')
         if symbol_font != None:
