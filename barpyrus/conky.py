@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import contextlib
 import subprocess
 import time
 import sys
@@ -43,3 +44,66 @@ class ConkyWidget(RawLabel):
     def eventinputs(self):
         return [ self.conky ]
 
+class ConkyGenerator:
+
+    def __init__(self):
+        self._text = ""
+        self._in_if = False
+        self._cases = None
+
+    def __str__(self):
+        return self._text
+
+    @contextlib.contextmanager
+    def if_(self, text):
+        self._text += '${if_%s}' % text
+        self._in_if = True
+        yield
+        self._in_if = False
+        self._text += '$endif'
+
+    def else_(self):
+        if not self._in_if and self._cases is None:
+            raise ValueError("else without if/cases!")
+        self._text += '$else'
+
+    @contextlib.contextmanager
+    def cases(self):
+        if self._cases is not None:
+            raise ValueError("Nesting cases is not supported!")
+        self._cases = 0
+        yield
+        for _ in range(self._cases):
+            self._text += '$endif'
+
+    def case(self, text):
+        if self._cases is None:
+            raise ValueError("Got case without cases!")
+        if self._cases != 0:
+            self._text += '$else'
+        self._text += '${if_%s}' % text
+        self._cases += 1
+
+    def text(self, text):
+        self._text += text
+
+    def var(self, text):
+        self._text += '${%s}' % text
+
+    @contextlib.contextmanager
+    def temp_fg(self, color):
+        self.fg(color)
+        yield
+        self.fg(None)
+
+    def fg(self, color):
+        if color is None:
+            self._text += '%{F-}'
+        else:
+            self._text += '%%{F\\#%x}' % color
+
+    def symbol(self, ch):
+        self._text += '%%{T2}%s%%{T-}' % chr(ch)
+
+    def space(self):
+        self._text += ' '
