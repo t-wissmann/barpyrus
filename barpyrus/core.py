@@ -109,8 +109,11 @@ class Painter:
         pass
     def drawRaw(self, text): # draw text and possibly interpret them as control characters
         pass
-    def __iadd__(self, text): # draw a text savely
+    def text(self,text): # draw a text savely
         pass
+    def __iadd__(self, text):
+        self.text(text)
+        return self
     def fg(self, color = None): # sets the foreground color (None resets it to the default)
         pass
     def bg(self, color = None): # sets the background color (None resets it to the default)
@@ -165,6 +168,11 @@ class Painter:
     def _exit_clickable(self, clickable):
         pass
 
+class TextPainter(Painter):
+    # like a painter, but additionally supports encoding the formatting
+    # information within text
+    def __str__(self):
+        pass
 
 def get_mouse_location():
     cmd = 'xdotool getmouselocation'.split(' ')

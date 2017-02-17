@@ -25,7 +25,7 @@ def setborder(winid_int, border_width, border_color):
 		# if we want to keep the window content in place
 		# we have to move it
 		x = geometry.x - border_width + geometry.border_width,
-		y = geometry.y - border_width + geometry.border_width
+		y = geometry.y - border_width + geometry.border_width,
 		)
 	window.change_attributes(border_pixel = pixel_value)
 	d.flush()

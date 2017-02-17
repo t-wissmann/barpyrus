@@ -1,6 +1,10 @@
 
 from barpyrus.core import EventInput
-from barpyrus.core import Painter
+from barpyrus.core import TextPainter
+
+def textpainter():
+    return Lemonbar.LBPainter(None)
+
 
 class Lemonbar(EventInput):
     def __init__(self, geometry = None,
@@ -37,16 +41,15 @@ class Lemonbar(EventInput):
         #    self.widget.can_handle_input(name, btn)
         else:
             print("invalid event name: %s" % line)
-    class LBPainter(Painter):
+    class LBPainter(TextPainter):
         def __init__(self,lemonbar):
             super(Lemonbar.LBPainter,self).__init__()
             self.buf = ""
             self.lemonbar = lemonbar
         def drawRaw(self, text):
             self.buf += text
-        def __iadd__(self, text):
-            self.buf += text.replace('%', '%%')
-            return self
+        def text(self, text):
+            self.buf += text.replace('%', '%%{}')
         def set_ul(self, enabled):
             self.buf += '%{+u}' if enabled else '%{-u}'
         def set_ol(self, enabled):
@@ -65,6 +68,8 @@ class Lemonbar(EventInput):
             self.buf += '%{T3}' + chr(symbol) + '%{T-}'
         def flush(self):
             self.lemonbar.write_flushed(self.buf + '\n')
+        def __str__(self):
+            return self.buf
         def space(self, width):
             self.buf += '%{T2}' + (' ' * width) + '%{T-}'
         def _enter_clickable(self, clickable):
@@ -77,7 +82,4 @@ class Lemonbar(EventInput):
                 self.buf += '%{A}'
     def painter(self):
         return Lemonbar.LBPainter(self)
-    def textpainter(self, actions = lambda x: True):
-        p = LBPainter(None)
-        actions(p)
-        return p.buf
+
