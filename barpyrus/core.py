@@ -7,6 +7,7 @@ import select
 import os
 import math
 import struct
+import contextlib
 
 
 global_inputs = [ ]
@@ -116,6 +117,13 @@ class Painter:
         return self
     def fg(self, color = None): # sets the foreground color (None resets it to the default)
         pass
+
+    @contextlib.contextmanager
+    def temp_fg(self, color):
+        self.fg(color)
+        yield
+        self.fg(None)
+
     def bg(self, color = None): # sets the background color (None resets it to the default)
         pass
     def ul(self, color = None): # sets the underline color (None resets it to the default)
