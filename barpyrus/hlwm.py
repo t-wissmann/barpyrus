@@ -178,6 +178,11 @@ class HLWMTags(Widget):
 
     def update_tags(self, args = None):
         strlist = self.hc(['tag_status', str(self.monitor)]).strip('\t').split('\t')
+        # remove buttons if tags have been deleted
+        if len(strlist) < self.tag_count:
+            del self.tags[len(strlist):]
+            del self.subwidgets[len(strlist):]
+            del self.tag_info[len(strlist):]
         self.tag_count = len(strlist)
         # enlarge the tag button array
         for i in range(len(self.tags),len(strlist)):
