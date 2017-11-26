@@ -49,7 +49,7 @@ class Lemonbar(EventInput):
         def drawRaw(self, text):
             self.buf += text
         def text(self, text):
-            self.buf += text.replace('%', '%%{}')
+            self.buf += text.replace('%', '%%')
         def set_ul(self, enabled):
             self.buf += '%{+u}' if enabled else '%{-u}'
         def set_ol(self, enabled):
