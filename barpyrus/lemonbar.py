@@ -12,7 +12,14 @@ class Lemonbar(EventInput):
                  symbol_font = '-wuncon-siji-medium-r-normal--10-100-75-75-c-80-iso10646-1',
                  background = '#ee121212',
                  foreground = '#989898',
+                 lemonbar_old_percent_escapes = False,
                  args = []):
+        # since https://github.com/LemonBoy/bar/commit/1411d260a4c6956ff5a3699ee9bfd5b275209fe3
+        # lemonbar handles the escaping of % symbols correctly. If you have an
+        # old lemonbar installation, you must set
+        #
+        #   lemonbar_old_percent_escapes = True
+        #
         command = [ "lemonbar" ]
         if geometry:
             (x,y,w,h) = geometry
@@ -27,6 +34,7 @@ class Lemonbar(EventInput):
         command += args
         super(Lemonbar,self).__init__(command)
         self.widget = None
+        self.lemonbar_old_percent_escapes = lemonbar_old_percent_escapes
         self.clickareas = { }
 
     def handle_line(self,line):
@@ -49,7 +57,11 @@ class Lemonbar(EventInput):
         def drawRaw(self, text):
             self.buf += text
         def text(self, text):
-            self.buf += text.replace('%', '%%{}')
+            if self.lemonbar is None or \
+                not self.lemonbar .lemonbar_old_percent_escapes:
+                self.buf += text.replace('%', '%%')
+            else:
+                self.buf += text.replace('%', '%%{}')
         def set_ul(self, enabled):
             self.buf += '%{+u}' if enabled else '%{-u}'
         def set_ol(self, enabled):
