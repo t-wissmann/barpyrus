@@ -8,6 +8,7 @@ def textpainter():
 
 class Lemonbar(EventInput):
     def __init__(self, geometry = None,
+                 cmd = 'lemonbar',
                  font = '-*-fixed-medium-*-*-*-12-*-*-*-*-*-iso10646-1',
                  symbol_font = '-wuncon-siji-medium-r-normal--10-100-75-75-c-80-iso10646-1',
                  background = '#ee121212',
@@ -20,7 +21,7 @@ class Lemonbar(EventInput):
         #
         #   lemonbar_old_percent_escapes = True
         #
-        command = [ "lemonbar" ]
+        command = [ cmd ]
         if geometry:
             (x,y,w,h) = geometry
             command += [ '-g', "%dx%d%+d%+d" % (w,h,x,y)  ]
