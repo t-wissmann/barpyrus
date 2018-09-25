@@ -23,6 +23,7 @@ class HLWMInput(EventInput):
         self.hooks = { }
         super(HLWMInput,self).__init__(cmd)
         self.enhook('quit_panel', lambda args: quit_main_loop())
+        self.enhook('reload', lambda args: quit_main_loop())
     def enhook(self,name,callback):
         self.hooks.setdefault(name,[]).append(callback)
     def handle_line(self,line):
