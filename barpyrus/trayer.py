@@ -24,15 +24,28 @@ class TrayerWatch(EventInput):
         for key,val in self.default_args.items():
             command += ["--%s" % (key), str(val)]
 
+        self.display = Display()
+        root = self.display.screen().root
+
+        # get root window's current event mask and replace it in order to wait
+        # passively for the trayer window
+        old_mask = root.get_attributes().your_event_mask
+        root.change_attributes(event_mask=X.SubstructureNotifyMask)
+        self.display.sync()
+
         super(TrayerWatch,self).__init__(command)
         self.proc.stdin.close()
         self.proc.stdout.close()
 
-        # search for running trayer window
-        self.display = Display()
-        root = self.display.screen().root
-        self.trayer = self.find_tray_window(root, cmd)
-        assert self.trayer is not None, 'Panel not found!'
+        # wait passively for trayer to create its window
+        while True:
+            event = self.display.next_event()
+            self.trayer = self.find_tray_window(root, cmd)
+            if self.trayer is not None:
+                break
+
+        # revert root window event_mask to remove unnecessary wakeups
+        root.change_attributes(event_mask=old_mask)
         
         # activate ConfigureNotify-Events for self.trayer
         self.trayer.change_attributes(event_mask=X.StructureNotifyMask)
