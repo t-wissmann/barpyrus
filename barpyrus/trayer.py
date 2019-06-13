@@ -5,8 +5,8 @@ from barpyrus.core import EventInput
 from Xlib.display import Display, X
 
 class TrayerWatch(EventInput):
-    def __init__(self, args = None):
-        command = [ 'trayer' ]
+    def __init__(self, cmd, args):
+        command = [ cmd ]
         self.default_args = {
             'edge': 'top',
             'align': 'right',
@@ -31,13 +31,13 @@ class TrayerWatch(EventInput):
         # search for running trayer window
         self.display = Display()
         root = self.display.screen().root
-        self.trayer = self.find_tray_window(root)
+        self.trayer = self.find_tray_window(root, cmd)
         assert self.trayer is not None, 'Panel not found!'
         
         # activate ConfigureNotify-Events for self.trayer
         self.trayer.change_attributes(event_mask=X.StructureNotifyMask)
 
-    def find_tray_window(self, root, tray_name='trayer'):
+    def find_tray_window(self, root, tray_name):
         children = root.query_tree().children
         for window in children:
             if window.get_wm_class() and window.get_wm_class()[1] == tray_name:
@@ -71,9 +71,9 @@ class TrayerWatch(EventInput):
 
 
 class TrayerWidget(Widget):
-    def __init__(self, args = None):
+    def __init__(self, cmd = 'trayer', args = None):
         super(TrayerWidget,self).__init__()
-        self.trayer = TrayerWatch(args=args)
+        self.trayer = TrayerWatch(cmd, args)
 
     def render(self, painter):
         painter.space(self.trayer.get_width())
