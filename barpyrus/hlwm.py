@@ -16,6 +16,13 @@ from barpyrus.widgets import StackedLayout
 from barpyrus.core import EventInput
 from barpyrus.core import Painter
 from barpyrus.core import quit_main_loop
+from barpyrus.colors import (
+    PURPLE_DARK,
+    GREEN_DARK,
+    FG,
+    BG,
+    BG2,
+)
 
 class HLWMInput(EventInput):
     def __init__(self):
@@ -60,18 +67,18 @@ def underlined_tags(self, painter): # self is a HLWMTagInfo object
         return
     #painter.ol('#ffffff' if self.focused else None)
     painter.set_flag(painter.underline, True if self.visible else False)
-    painter.fg('#a0a0a0' if self.occupied else '#909090')
+    painter.fg(FG2 if self.occupied else FG4)
     if self.urgent:
-        painter.ol('#FF7F27')
-        painter.fg('#FF7F27')
+        painter.ol(ORANGE_LIGHT)
+        painter.fg(ORANGE_LIGHT)
         painter.set_flag(Painter.underline, True)
-        painter.bg('#57000F')
+        painter.bg(RED_DARK)
     elif self.here:
-        painter.fg('#ffffff')
-        painter.ol(self.activecolor if self.focused else '#ffffff')
+        painter.fg(FG)
+        painter.ol(self.activecolor if self.focused else FG)
         painter.bg(self.emphbg)
     else:
-        painter.ol('#454545')
+        painter.ol(BG2)
     painter.space(3)
     if self.name == 'irc':
         #painter.symbol(0xe1ec)
@@ -105,8 +112,8 @@ class HLWMTagInfo:
         self.urgent = False
         self.visible = True
         self.empty = False
-        self.activecolor = '#9fbc00'
-        self.emphbg = '#303030'
+        self.activecolor = GREEN_DARK
+        self.emphbg = BG
     def parse(self,string): # parse a tag_status string
         self.name = string[1:]
         self.parse_char(string[0])
@@ -142,15 +149,16 @@ class HLWMTagInfo:
             return
         painter.bg(self.emphbg if self.here else None)
         painter.set_flag(painter.overline, True if self.visible else False)
-        painter.fg(None if self.occupied else '#909090')
+        painter.fg(None if self.occupied else FG4)
         if self.urgent:
-            painter.bg('#eeD6156C')
+            painter.fg(FG)
+            painter.bg(PURPLE_DARK)
             painter.set_flag(Painter.overline, False)
         if self.focused:
-            painter.fg('#ffffff')
+            painter.fg(FG)
             painter.ol(self.activecolor)
         else:
-            painter.ol('#454545')
+            painter.ol(BG2)
         painter.space(4)
         painter += self.name
         painter.space(4)
@@ -170,7 +178,7 @@ class HLWMTags(Widget):
         self.tag_renderer = tag_renderer
         self.monitor = monitor
         self.activecolor = hlwm('attr theme.tiling.active.color'.split(' '))
-        self.emphbg = '#303030'
+        self.emphbg = GREEN_DARK
         self.update_tags()
         hlwm.enhook('tag_changed', lambda a: self.update_tags(args = a))
         hlwm.enhook('tag_flags', lambda a: self.update_tags(args = a))
