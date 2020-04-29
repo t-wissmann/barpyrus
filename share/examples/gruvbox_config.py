@@ -1,3 +1,6 @@
+import os
+import sys
+
 from barpyrus import hlwm
 from barpyrus import widgets as W
 from barpyrus.core import Theme
@@ -13,9 +16,8 @@ from barpyrus.colors import (
     RED_LIGHT,
     FG,
     BG,
-    col_fmt,
 )
-import sys
+from barpyrus.conky import col_fmt
 # Copy this config to ~/.config/barpyrus/config.py
 
 # set up a connection to herbstluftwm in order to get events
@@ -25,15 +27,15 @@ hc = hlwm.connect()
 # get the geometry of the monitor
 monitor = sys.argv[1] if len(sys.argv) >= 2 else 0
 (x, y, monitor_w, monitor_h) = hc.monitor_rect(monitor)
-height = 14 # height of the panel
-width = monitor_w # width of the panel
-hc(['pad', str(monitor), str(height)]) # get space for the panel
+height = 14  # height of the panel
+width = monitor_w  # width of the panel
+hc(['pad', str(monitor), str(height)])  # get space for the panel
 
 # Conky setup
 custom = ''
 
 mail_symb = '\ue1a8'
-inbox = '/home/axel/.mail/INBOX'
+inbox = os.path.expanduser('~/.mail/INBOX')
 mail = col_fmt(AQUA_LIGHT) + mail_symb + col_fmt(FG) + ' ${new_mails %s}/${mails %s}' % (inbox, inbox)
 
 disk_symb = '\ue1bb'
@@ -79,18 +81,28 @@ net_down_speed = col_fmt(GREEN_LIGHT) + net_up_speed_symb + col_fmt(FG) + '${ups
 ########
 # wifi #
 ########
+no_wifi_symb = '\ue217'
 wifi_icons = ['\ue218', '\ue219', '\ue21a']
 wifi_delta = 100 / len(wifi_icons)
-wifi_qual = '${wireless_link_qual_perc wlp0s20f3}'
-wifi = ''
-for i, icon in enumerate(wifi_icons[:-1]):
-    wifi += '${if_match ' + wifi_qual + ' < %d}' % ((i + 1) * wifi_delta)
-    wifi += col_fmt(BLUE_LIGHT) + icon
-    wifi += '${else}'
-wifi += col_fmt(BLUE_LIGHT) + wifi_icons[-1]  # 100 %
-for _ in range(len(wifi_icons) - 1):
-    wifi += '${endif}'
-wifi += col_fmt(FG) + ' ' + wifi_qual + '%'
+# Find the wifi name
+wifi_name = None
+for net in os.listdir('/sys/class/net'):
+    if net[0] == 'w':
+        wifi_name = net
+        break
+if wifi_name is None:
+    wifi = col_fmt(FG) + no_wifi_symb
+else:
+    wifi_qual = '${wireless_link_qual_perc %s}' % wifi_name
+    wifi = ''
+    for i, icon in enumerate(wifi_icons[:-1]):
+        wifi += '${if_match ' + wifi_qual + ' < %d}' % ((i + 1) * wifi_delta)
+        wifi += col_fmt(BLUE_LIGHT) + icon
+        wifi += '${else}'
+    wifi += col_fmt(BLUE_LIGHT) + wifi_icons[-1]  # 100 %
+    for _ in range(len(wifi_icons) - 1):
+        wifi += '${endif}'
+    wifi += col_fmt(FG) + ' ' + wifi_qual + '%'
 
 ###########
 # battery #
@@ -109,11 +121,11 @@ bat_icons = [
 # first icon: 0 percent
 # last icon: 100 percent
 bat_delta = 100 / len(bat_icons)
-for i,icon in enumerate(bat_icons[:-1]):
+for i, icon in enumerate(bat_icons[:-1]):
     battery += "${if_match $battery_percent < %d}" % ((i+1)*bat_delta)
     battery += chr(icon)
     battery += "${else}"
-battery += chr(bat_icons[-1]) # icon for 100 percent
+battery += chr(bat_icons[-1])  # icon for 100 percent
 for _ in bat_icons[:-1]:
     battery += "${endif}"
 battery += "%{T-} $battery_percent%"
@@ -145,13 +157,13 @@ setxkbmap = 'setxkbmap -option compose:menu -option ctrl:nocaps'
 setxkbmap += ' -option compose:ralt -option compose:rctrl'
 
 # you can define custom themes
-grey_frame = Theme(bg=BG, fg=FG, padding = (3,3))
+grey_frame = Theme(bg=BG, fg=FG, padding=(3, 3))
 
 # Widget configuration:
 font = '-*-fixed-medium-*-*-*-15-*-*-*-*-*-iso10646-1'
 symbol_font = '-wuncon-siji-medium-r-normal--10-100-75-75-c-80-iso10646-1'
 bar = lemonbar.Lemonbar(
-    geometry=(x,y,width,height),
+    geometry=(x, y, width, height),
     font=font,
     symbol_font=symbol_font,
 )
@@ -178,10 +190,9 @@ bar.widget = W.ListLayout([
     W.ShortLongLayout(
         W.RawLabel(''),
         W.ListLayout([
-            hlwm.HLWMLayoutSwitcher(hc, xkblayouts, command = setxkbmap.split(' ')),
+            hlwm.HLWMLayoutSwitcher(hc, xkblayouts, command=setxkbmap.split(' ')),
             W.RawLabel(' '),
-        ])),
-        grey_frame(W.DateTime('%d. %B, %H:%M')),
+        ]),
+    ),
+    grey_frame(W.DateTime('%d. %B, %H:%M')),
 ])
-
-

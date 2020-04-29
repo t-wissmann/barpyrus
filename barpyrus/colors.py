@@ -29,6 +29,3 @@ PURPLE_LIGHT = '#d3869b'
 AQUA_LIGHT = '#8ec07c'
 GRAY_LIGHT = '#928374'
 ORANGE_LIGHT = '#fe8019'
-
-def col_fmt(color):
-    return '%{F\\' + color + '}'
