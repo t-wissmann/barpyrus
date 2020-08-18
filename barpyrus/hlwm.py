@@ -16,6 +16,17 @@ from barpyrus.widgets import StackedLayout
 from barpyrus.core import EventInput
 from barpyrus.core import Painter
 from barpyrus.core import quit_main_loop
+from barpyrus.colors import (
+    PURPLE_DARK,
+    GREEN_DARK,
+    ORANGE_LIGHT,
+    RED_DARK,
+    FG,
+    FG2,
+    FG4,
+    BG,
+    BG2,
+)
 
 class HLWMInput(EventInput):
     def __init__(self):

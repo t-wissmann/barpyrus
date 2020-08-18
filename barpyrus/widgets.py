@@ -124,6 +124,17 @@ class DateTime(Label):
         self.last_time = self.label
         return if_changed
 
+
+class ExButton(Button):
+    def __init__(self, label, cmd):
+        super().__init__(label=label)
+        self._cmd = cmd
+        self.callback = self.execute_cmd
+
+    def execute_cmd(self, button):
+        subprocess.Popen(self._cmd, shell=True)
+
+
 class Switcher(Widget):
     def __init__(self,choices,selection=0):
         super(Switcher,self).__init__()
