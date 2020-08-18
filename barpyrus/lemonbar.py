@@ -11,6 +11,7 @@ class Lemonbar(EventInput):
                  cmd = 'lemonbar',
                  font = '-*-fixed-medium-*-*-*-12-*-*-*-*-*-iso10646-1',
                  symbol_font = '-wuncon-siji-medium-r-normal--10-100-75-75-c-80-iso10646-1',
+                 symbol_vert_offset=0,
                  background = '#ee121212',
                  foreground = '#989898',
                  lemonbar_old_percent_escapes = False,
@@ -28,9 +29,12 @@ class Lemonbar(EventInput):
         command += '-a 100 -d -u 2'.split(' ')
         command += [ '-B', background  ]
         command += [ '-F', foreground  ]
+        command += [ '-o 0' ]
         command += [ '-f', font  ]
+        command += [ '-o 0' ]
         command += '-f -*-*-*-*-*-*-2-*-*-*-*-*-*-*'.split(' ')
         if symbol_font != None:
+            command += [ '-o -%d' % symbol_vert_offset ]
             command += [ '-f', symbol_font ]
         command += args
         super(Lemonbar,self).__init__(command)

@@ -44,7 +44,11 @@ class Widget:
     def maybe_timeout(self, now):
         some_timeout = False
         for w in self.subwidgets:
-            some_timeout = w.maybe_timeout(now) or some_timeout
+            try:
+                some_timeout = w.maybe_timeout(now) or some_timeout
+            except:
+                breakpoint()
+                raise RuntimeError()
         if self.timer_interval and self.last_timeout + self.timer_interval <= now:
             self.last_timeout = now
             #print("timeout for " + str(self))
@@ -98,18 +102,30 @@ class Label(Widget):
     def render(self, p):
         p += self.label
 
+
+class ColorLabel(RawLabel):
+    def __init__(self, label, color):
+        super().__init__(label=label)
+        self.color = color
+    def render(self, p):
+        p.fg(self.color)
+        super().render(p)
+
 class Button(Widget):
-    def __init__(self,label):
+    def __init__(self, label):
         super(Button,self).__init__()
         self.label = label
         self.buttons = [ 1 ]
         self.callback = None
     def render(self, p):
-        p += self.label
+        if isinstance(self.label, Widget):
+            self.label.render(p)
+        else:
+            p += self.label
     def on_click(self, button):
-        #print("btn %d" % button)
         if self.callback:
             self.callback(button)
+
 
 class DateTime(Label):
     def __init__(self,time_format = '%H:%M, %Y-%m-%d'):
@@ -123,6 +139,17 @@ class DateTime(Label):
         if_changed = (self.label != self.last_time)
         self.last_time = self.label
         return if_changed
+
+
+class ExButton(Button):
+    def __init__(self, label, cmd):
+        super().__init__(label=label)
+        self._cmd = cmd
+        self.callback = self.execute_cmd
+
+    def execute_cmd(self, button):
+        subprocess.Popen(self._cmd, shell=True)
+
 
 class Switcher(Widget):
     def __init__(self,choices,selection=0):
