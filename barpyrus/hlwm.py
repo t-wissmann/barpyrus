@@ -172,11 +172,8 @@ class HLWMTags(Widget):
         self.activecolor = hlwm('attr theme.tiling.active.color'.split(' '))
         self.emphbg = '#303030'
         self.update_tags()
-        hlwm.enhook('tag_changed', lambda a: self.update_tags(args = a))
-        hlwm.enhook('tag_flags', lambda a: self.update_tags(args = a))
-        hlwm.enhook('tag_added', lambda a: self.update_tags(args = a))
-        hlwm.enhook('tag_removed', lambda a: self.update_tags(args = a))
-        hlwm.enhook('tag_renamed', lambda a: self.update_tags(args = a))
+        for event in ['tag_changed', 'tag_flags', 'tag_added', 'tag_removed', 'tag_renamed']:
+            hlwm.enhook(event, self.update_tags)
 
     def update_tags(self, args = None):
         strlist = self.hc(['tag_status', str(self.monitor)]).strip('\t').split('\t')
