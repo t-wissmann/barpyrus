@@ -176,6 +176,7 @@ class HLWMTags(Widget):
         hlwm.enhook('tag_flags', lambda a: self.update_tags(args = a))
         hlwm.enhook('tag_added', lambda a: self.update_tags(args = a))
         hlwm.enhook('tag_removed', lambda a: self.update_tags(args = a))
+        hlwm.enhook('tag_renamed', lambda a: self.update_tags(args = a))
 
     def update_tags(self, args = None):
         strlist = self.hc(['tag_status', str(self.monitor)]).strip('\t').split('\t')
