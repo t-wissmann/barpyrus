@@ -44,11 +44,7 @@ class Widget:
     def maybe_timeout(self, now):
         some_timeout = False
         for w in self.subwidgets:
-            try:
-                some_timeout = w.maybe_timeout(now) or some_timeout
-            except:
-                breakpoint()
-                raise RuntimeError()
+            some_timeout = w.maybe_timeout(now) or some_timeout
         if self.timer_interval and self.last_timeout + self.timer_interval <= now:
             self.last_timeout = now
             #print("timeout for " + str(self))
