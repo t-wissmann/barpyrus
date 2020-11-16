@@ -97,3 +97,7 @@ class ConkyGenerator:
 
     def __getattr__(self, name):
         return self._painter.__getattribute__(name)
+
+
+def col_fmt(color):
+    return '%{F\\' + color + '}'
