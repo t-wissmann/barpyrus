@@ -45,6 +45,63 @@ class ConkyWidget(RawLabel):
     def eventinputs(self):
         return [ self.conky ]
 
+
+class ConkyMatch:
+
+    def __init__(self, varname):
+        assert isinstance(varname, str), repr(varname)
+        self.varname = varname
+        self.value = None
+        self.operator = None
+
+    def __repr__(self):
+        return '<ConkyMatch varname=%r value=%r operator=%r>' % (self.varname, self.value, self.operator)
+
+    def _stringify(self, value):
+        if isinstance(value, str):
+            return '"%s"' % value.replace('\\', r'\\').replace('"', r'\"')
+        elif isinstance(value, (float, int)):
+            return str(value)
+        else:
+            raise TypeError("Unsupported value {%r}" % value)
+
+    def _store(self, operator, other):
+        if self.operator is not None or self.value is not None:
+            raise ValueError("Already compared: %s" % self)
+        self.operator = operator
+        self.value = other
+        return self
+
+    def __str__(self):
+        if self.operator is None or self.value is None:
+            raise ValueError('var %r never got compared!' % self.varname)
+        if isinstance(self.value, str):
+            # If the RHS is a string, we need to quote the LHS as string as well.
+            lhs = '"${%s}"' % self.varname
+        else:
+            lhs = '${%s}' % self.varname
+        rhs = self._stringify(self.value)
+        return 'match %s %s %s' % (lhs, self.operator, rhs)
+
+    def __gt__(self, other):
+        return self._store('>', other)
+
+    def __lt__(self, other):
+        return self._store('<', other)
+
+    def __ge__(self, other):
+        return self._store('>=', other)
+
+    def __le__(self, other):
+        return self._store('<=', other)
+
+    def __eq__(self, other):
+        return self._store('==', other)
+
+    def __ne__(self, other):
+        return self._store('!=', other)
+
+
 class ConkyGenerator:
 
     def __init__(self, textpainter):
@@ -64,6 +121,9 @@ class ConkyGenerator:
         yield
         self._in_if = False
         self._painter.drawRaw('${endif}')
+
+    def match(self, varname):
+        return ConkyMatch(varname)
 
     def else_(self):
         if not self._in_if and self._cases is None:
