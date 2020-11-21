@@ -38,8 +38,7 @@ class EventInput:
     def readlines(self):
         data = os.read(self.proc.stdout.fileno(), 4096).decode('utf-8')
         if not data:
-            # EOF
-            return None
+            raise EOFError
         self._buf += data
         if '\n' not in data:
             return []

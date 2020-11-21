@@ -91,9 +91,12 @@ def main_loop(bar, inputs = None):
         if not data_ready:
             pass #print('timeout!')
         else:
-            for x in data_ready:
-                x.process()
-                global_update = True
+            try:
+                for x in data_ready:
+                    x.process()
+                    global_update = True
+            except EOFError:
+                break
     bar.proc.kill()
     for i in inputs:
         i.kill()
