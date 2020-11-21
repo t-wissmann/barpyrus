@@ -32,6 +32,11 @@ class EventInput:
         self._buf = ''
         self.callback = None;
         add_global_input(self)
+
+    def __str__(self):
+        cmd = ' '.join([f"'{word}'" for word in self.command])
+        return f'<EventInput pid={self.proc.pid} {cmd}>'
+
     def fileno(self):
         return self.proc.stdout.fileno()
     # thanks to http://stackoverflow.com/questions/5486717/python-select-doesnt-signal-all-input-from-pipe

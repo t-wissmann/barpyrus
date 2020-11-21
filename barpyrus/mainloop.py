@@ -91,12 +91,14 @@ def main_loop(bar, inputs = None):
         if not data_ready:
             pass #print('timeout!')
         else:
-            try:
-                for x in data_ready:
+            for x in data_ready:
+                try:
                     x.process()
                     global_update = True
-            except EOFError:
-                break
+                except EOFError:
+                    print(f"Received EOF from {x}", file=sys.stderr)
+                    quit_main_loop()
+                    break
     bar.proc.kill()
     for i in inputs:
         i.kill()
