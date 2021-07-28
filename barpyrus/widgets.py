@@ -123,15 +123,15 @@ class Button(Widget):
             self.callback(button)
 
 class ToggleButton(Button):
-    def __init__(self, labels):
-        self.labels = labels
-        super().__init__(label=self.labels[0])
+    def __init__(self, cls):
+        self.cls = cls
+        super().__init__(label=self.cls.displayed)
         self.buttons = [1, 3]
 
     def on_click(self, button):
         super().on_click(button)
         if button == 1:
-            self.label = self.labels[0]
+            self.label = self.cls.displayed
 
 class DateTime(Label):
     def __init__(self,time_format = '%H:%M, %Y-%m-%d'):
