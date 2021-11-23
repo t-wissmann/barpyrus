@@ -139,6 +139,7 @@ class StalonetrayWidget(Widget):
             '--geometry', '1x1+{}+{}'.format(panel_x + panel_width - icon_size, panel_y),
             '--icon-size', str(icon_size),
             '--grow-gravity', 'E',
+            '--kludges=force_icons_size',  # force icon size in apps like steam
         ]
         command += args
         self.tray = WindowWatch(command, is_tray_window)
