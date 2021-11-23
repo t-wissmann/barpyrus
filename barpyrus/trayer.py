@@ -114,13 +114,16 @@ class TrayerWidget(Widget):
 
 
 class StalonetrayWidget(Widget):
-    def __init__(self, panel_geometry, cmd='stalonetray', args=[]):
+    def __init__(self, panel_geometry, cmd='stalonetray', args=[], width_factor=1):
         """
         a widget that starts stalonetray and reserves space for it in
         the panel.
         panel_geometry is the geometry (x,y,width,height) of the panel
+        if the stalonetray window has width n, then
+        this will reserve width_factor*n spaces on the bar
         """
         super(StalonetrayWidget,self).__init__()
+        self.width_factor = width_factor
 
         def is_tray_window(window):
             if window.get_wm_class() and window.get_wm_class()[1] == 'stalonetray':
@@ -141,5 +144,5 @@ class StalonetrayWidget(Widget):
         self.tray = WindowWatch(command, is_tray_window)
 
     def render(self, painter):
-        width = self.tray.get_width()
+        width = int(self.tray.get_width() * self.width_factor)
         painter.space(width)
