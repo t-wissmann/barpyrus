@@ -114,7 +114,7 @@ class TrayerWidget(Widget):
 
 
 class StalonetrayWidget(Widget):
-    def __init__(self, panel_geometry, cmd = 'stalonetray'):
+    def __init__(self, panel_geometry, cmd='stalonetray', args=[]):
         """
         a widget that starts stalonetray and reserves space for it in
         the panel.
@@ -137,6 +137,7 @@ class StalonetrayWidget(Widget):
             '--icon-size', str(icon_size),
             '--grow-gravity', 'E',
         ]
+        command += args
         self.tray = WindowWatch(command, is_tray_window)
 
     def render(self, painter):
