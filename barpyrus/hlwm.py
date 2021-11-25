@@ -118,9 +118,11 @@ class HLWMTagInfo:
         self.empty = False
         self.activecolor = GREEN_DARK
         self.emphbg = BG
-    def parse(self,string): # parse a tag_status string
+        self.index = 0
+    def parse(self, string, index): # parse a tag_status string
         self.name = string[1:]
         self.parse_char(string[0])
+        self.index = index
     def parse_char(self,ch): # parse a tag_status char
         self.occupied = True
         self.focused = False
@@ -209,7 +211,7 @@ class HLWMTags(Widget):
             self.tag_info.append(tag_info)
         # update names and formatting
         for i in range(0, self.tag_count):
-            self.tag_info[i].parse(strlist[i])
+            self.tag_info[i].parse(strlist[i], i)
         self.needs_update = False
     def tag_clicked(self,tagindex,button):
         cmd = 'chain , focus_monitor %s , use_index %s' % (str(self.monitor),str(tagindex))
