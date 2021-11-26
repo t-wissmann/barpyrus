@@ -47,13 +47,13 @@ class WindowWatch(EventInput):
         self.proc.stdout.close()
 
         # wait passively for trayer to create its window
-        while self.proc.poll() is not None:
+        while self.proc.poll() is None:
             event = self.display.next_event()
             self.trayer = self.find_tray_window(root, is_right_window)
             if self.trayer is not None:
                 break
 
-        if self.proc.poll() is None:
+        if self.proc.poll() is not None:
             print("command »{}« exited unexpectedly.".format(' '.join(command)), file=sys.stderr)
             return
 
