@@ -3,18 +3,21 @@
 from barpyrus.widgets import Widget
 from barpyrus.core import EventInput
 from Xlib.display import Display, X
+import Xlib
 
 class WindowWatch(EventInput):
     """
     Run an external command that creates a window and then
     watch that window's size.
     """
-    def __init__(self, command, is_right_window):
+    def __init__(self, command, is_right_window, kill_old_instance=False):
         """
         - command is a tokinzed command to invoke the process
         - is_right_window is a callback such that
             is_right_window(window) returns 'window' if it is a the window to watch
             and None otherwise.
+        - if kill_old_instance is set, then all clients matching
+          is_right_window() are killed before 'command' is invoked.
         """
 
         self.display = Display()
@@ -26,6 +29,18 @@ class WindowWatch(EventInput):
         root.change_attributes(event_mask=X.SubstructureNotifyMask)
         self.display.sync()
 
+        if kill_old_instance:
+            while True:
+                old_tray = self.find_tray_window(root, is_right_window)
+                if old_tray is None:
+                    # no old instance
+                    break
+                # force shutdown:
+                old_tray.kill_client()
+                # wait for an event, i.e. any kind of updater from X
+                self.display.next_event()
+
+        # start the process:
         super(WindowWatch,self).__init__(command)
         self.proc.stdin.close()
         self.proc.stdout.close()
@@ -46,12 +61,17 @@ class WindowWatch(EventInput):
     def find_tray_window(self, root, is_right_window):
         children = root.query_tree().children
         for window in children:
-            found = is_right_window(window)
-            if found is not None:
-                return found
-            res = self.find_tray_window(window, is_right_window)
-            if res:
-                return res
+            try:
+                found = is_right_window(window)
+                if found is not None:
+                    return found
+                res = self.find_tray_window(window, is_right_window)
+                if res:
+                    return res
+            except Xlib.error.BadWindow as e:
+                # if a window disappeared while inspecting it,
+                # just skip it.
+                pass
         return None
 
     def watch_trayer_non_blocking(self):
@@ -63,7 +83,12 @@ class WindowWatch(EventInput):
                 continue
 
     def get_width(self):
-        self.width = self.trayer.get_geometry().width
+        try:
+            self.width = self.trayer.get_geometry().width
+        except Xlib.error.BadWindow:
+            self.width = 0
+        except Xlib.error.BadDrawable:
+            self.width = 0
         return self.width
 
     def kill(self):
@@ -142,7 +167,7 @@ class StalonetrayWidget(Widget):
             '--kludges=force_icons_size',  # force icon size in apps like steam
         ]
         command += args
-        self.tray = WindowWatch(command, is_tray_window)
+        self.tray = WindowWatch(command, is_tray_window, kill_old_instance=True)
 
     def render(self, painter):
         width = int(self.tray.get_width() * self.width_factor)
