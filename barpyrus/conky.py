@@ -3,11 +3,12 @@
 import contextlib
 import subprocess
 import time
+import textwrap
 import sys
 import select
 import os
-from barpyrus.widgets import RawLabel
-from barpyrus.core import EventInput
+from barpyrus.widgets import Widget
+from barpyrus.core import EventInput, Painter
 from barpyrus.core import TextPainter
 
 class Conky(EventInput):
@@ -35,13 +36,33 @@ class Conky(EventInput):
         self.write_flushed(config_str);
         self.proc.stdin.close()
 
-class ConkyWidget(RawLabel):
+class ConkyWidget(Widget):
     def __init__(self, text='Conky $conky_version', config = { }, lua = ""):
-        super(ConkyWidget,self).__init__("")
+        """
+        Show the conky output in a widget.
+        text can be the conky source text or a ConkyGenerator object
+        """
+        super(ConkyWidget,self).__init__()
+        self.clickareas = {}
+        self.label = ''
+        if isinstance(text, ConkyGenerator):
+            # if a ConkyGenerator is passed,
+            # then extract text from there
+            generator = text
+            text = generator.conky_source_text()
+            # and remember the clickareas
+            self.clickareas = generator.clickareas
         self.conky = Conky(text=text, config=config, lua=lua)
         self.conky.callback = lambda line: self.update_label(line)
+
+    def render(self, p):
+        if hasattr(p, 'lemonbar') and p.lemonbar is not None:
+            p.lemonbar.clickareas.update(self.clickareas)
+        p.drawRaw(self.label)
+
     def update_label(self, line):
         self.label = line
+
     def eventinputs(self):
         return [ self.conky ]
 
@@ -108,8 +129,21 @@ class ConkyGenerator:
         self._painter = textpainter
         self._in_if = False
         self._cases = None
+        # we act as if this ConkyGenerator would be the final lemonbar:
+        self.clickareas = {}
+        self.lemonbar_old_percent_escapes = False
+        textpainter.lemonbar = self
 
     def __str__(self):
+        msg = """\
+        Warning: do not use str() on ConkyGenerator, because it looses
+        clickable areas. Instead, directly pass the ConkyGenerator object to
+        the ConkyWidget.
+        """
+        print(textwrap.dedent(msg).strip(), file=sys.stderr)
+        return self.conky_source_text()
+
+    def conky_source_text(self):
         # conky treats '#' as comment indicators
         # we want each '#' to be treated literally
         return str(self._painter).replace('#', '\\#')
@@ -147,6 +181,21 @@ class ConkyGenerator:
             self._painter.drawRaw('${else}')
         self._painter.drawRaw('${if_%s}' % text)
         self._cases += 1
+
+    @contextlib.contextmanager
+    def clickable(self, buttons, callback):
+        """
+        a context whose content will be clickable:
+        buttons: a list of integers of button numbers
+        callback: a function that is called on click:
+            callback(button) where button is the clicked button
+        """
+        if isinstance(buttons, int):
+            buttons = [buttons]
+        clickable = Painter.Clickable(buttons, self, callback)
+        self._painter._enter_clickable(clickable)
+        yield
+        self._painter._exit_clickable(clickable)
 
     def var(self, text):
         self._painter.drawRaw('${%s}' % text)
