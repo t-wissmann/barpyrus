@@ -33,3 +33,7 @@ If you just want to have a quick look, you can run it directly:
 
 ## License
 barpyrus is licensed under the [simplified BSD license](LICENSE).
+
+## Examples
+
+[![image](https://user-images.githubusercontent.com/9048813/143689969-e92fe9ab-9390-4726-bed2-b80192f591e3.png)](https://user-images.githubusercontent.com/9048813/143689969-e92fe9ab-9390-4726-bed2-b80192f591e3.png)
