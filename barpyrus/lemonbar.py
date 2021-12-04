@@ -100,7 +100,10 @@ class Lemonbar(EventInput):
         def __str__(self):
             return self.buf
         def space(self, width):
-            factor = self.lemonbar.spacing_font_width
+            if hasattr(self.lemonbar, 'spacing_font_width'):
+                factor = self.lemonbar.spacing_font_width
+            else:
+                factor = 1
             self.buf += '%{T2}' + (' ' * int(width / factor)) + '%{T-}'
         def _enter_clickable(self, clickable):
             for b in clickable.buttons:
