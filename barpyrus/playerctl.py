@@ -48,6 +48,8 @@ class Playerctl(Widget):
             'title',
             'status',
             'album',
+            'xesam:artist',
+            'xesam:title',
         ]
         self.playerctl = PlayerctlFollow(playerctl_prefix, variables)
 
@@ -71,11 +73,17 @@ class Playerctl(Widget):
         p.space(3)
         p.fg(barpyrus.colors.GRAY_LIGHT)
         p.fg(barpyrus.colors.GREEN_LIGHT)
-        p += self.playerctl['artist']
+        artist = self.playerctl['artist']
+        if len(artist) == 0:
+            artist = self.playerctl['xesam:artist']
+        p += artist
         p.fg(barpyrus.colors.GRAY_LIGHT)
         p += ': '
         p.fg(barpyrus.colors.ORANGE_LIGHT)
-        p += self.playerctl['title']
+        title = self.playerctl['title']
+        if len(title) == 0:
+            title = self.playerctl['xesam:title']
+        p += title
         p.fg(barpyrus.colors.GRAY_LIGHT)
         if self['album'] != '':
             p += ' ('
