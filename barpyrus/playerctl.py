@@ -67,9 +67,9 @@ class Playerctl(Widget):
         # p.symbol(music_notes[1])
         p.fg(barpyrus.colors.PURPLE_DARK)
         if self['status'] == 'Playing':
-            p.symbol(0xe058)  # Play
+            p.symbol(0xe059)  # Pause icon
         else:
-            p.symbol(0xe059)  # Pause
+            p.symbol(0xe058)  # Play icon
         p.space(3)
         p.fg(barpyrus.colors.GRAY_LIGHT)
         p.fg(barpyrus.colors.GREEN_LIGHT)
