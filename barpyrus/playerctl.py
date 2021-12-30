@@ -65,6 +65,12 @@ class Playerctl(Widget):
         # ]
         # p.fg(barpyrus.colors.GRAY_LIGHT)
         # p.symbol(music_notes[1])
+        artist = self.playerctl['artist']
+        if len(artist) == 0:
+            artist = self.playerctl['xesam:artist']
+        title = self.playerctl['title']
+        if len(title) == 0:
+            title = self.playerctl['xesam:title']
         p.fg(barpyrus.colors.PURPLE_DARK)
         if self['status'] == 'Playing':
             p.symbol(0xe059)  # Pause icon
@@ -73,16 +79,11 @@ class Playerctl(Widget):
         p.space(3)
         p.fg(barpyrus.colors.GRAY_LIGHT)
         p.fg(barpyrus.colors.GREEN_LIGHT)
-        artist = self.playerctl['artist']
-        if len(artist) == 0:
-            artist = self.playerctl['xesam:artist']
-        p += artist
-        p.fg(barpyrus.colors.GRAY_LIGHT)
-        p += ': '
+        if len(artist) > 0:
+            p += artist
+            p.fg(barpyrus.colors.GRAY_LIGHT)
+            p += ': '
         p.fg(barpyrus.colors.ORANGE_LIGHT)
-        title = self.playerctl['title']
-        if len(title) == 0:
-            title = self.playerctl['xesam:title']
         p += title
         p.fg(barpyrus.colors.GRAY_LIGHT)
         if self['album'] != '':
