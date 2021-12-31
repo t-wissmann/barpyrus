@@ -68,9 +68,11 @@ class Playerctl(Widget):
         artist = self.playerctl['artist']
         if len(artist) == 0:
             artist = self.playerctl['xesam:artist']
+        artist = artist[0:30]
         title = self.playerctl['title']
         if len(title) == 0:
             title = self.playerctl['xesam:title']
+        title = title[0:30]
         p.fg(barpyrus.colors.PURPLE_DARK)
         if self['status'] == 'Playing':
             p.symbol(0xe059)  # Pause icon
