@@ -71,6 +71,7 @@ class Lemonbar(EventInput):
             super(Lemonbar.LBPainter,self).__init__()
             self.buf = ""
             self.lemonbar = lemonbar
+            self.next_click_id = 0
         def drawRaw(self, text):
             self.buf += text
         def text(self, text):
@@ -106,9 +107,11 @@ class Lemonbar(EventInput):
                 factor = 1
             self.buf += '%{T2}' + (' ' * int(width / factor)) + '%{T-}'
         def _enter_clickable(self, clickable):
+            click_id = self.next_click_id
+            self.next_click_id += 1
             for b in clickable.buttons:
-                clickname = str(id(clickable.obj)) + '_' + str(b)
-                self.buf += '%%{A%d:%s:}' % (b,clickname)
+                clickname = f'{click_id}_{b}'
+                self.buf += '%%{A%d:%s:}' % (b, clickname)
                 self.lemonbar.clickareas[clickname] = (clickable.callback, b)
         def _exit_clickable(self, clickable):
             for b in clickable.buttons:

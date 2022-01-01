@@ -56,6 +56,16 @@ class Playerctl(Widget):
     def __getitem__(self, key):
         return self.playerctl.values.get(key, '')
 
+    def prev(self, button):
+        print("PREV")
+
+    def next(self, button):
+        print("NEXT")
+
+    def playpause(self, button):
+        # print("playpause")
+        pass
+
     def render(self, p):
         # music_notes = [
         #     0xe270,
@@ -73,12 +83,22 @@ class Playerctl(Widget):
         if len(title) == 0:
             title = self.playerctl['xesam:title']
         title = title[0:30]
+        # buttons don't work correctly
+        # in the centered area of lemonbar-xft
+        # with p.clickable(1, self.prev):
+        #     p.fg(barpyrus.colors.PURPLE_DARK)
+        #     p.symbol(0xe096)  # prev icon
+        #     p += ' '
         p.fg(barpyrus.colors.PURPLE_DARK)
-        if self['status'] == 'Playing':
-            p.symbol(0xe059)  # Pause icon
-        else:
-            p.symbol(0xe058)  # Play icon
-        p.space(3)
+        with p.clickable(1, self.playpause):
+            if self['status'] == 'Playing':
+                p.symbol(0xe059)  # Pause icon
+            else:
+                p.symbol(0xe058)  # Play icon
+            p += ' '
+        # with p.clickable(1, self.next):
+        #     p.symbol(0xe09c)  # next icon
+        #     p += ' '
         p.fg(barpyrus.colors.GRAY_LIGHT)
         p.fg(barpyrus.colors.GREEN_LIGHT)
         if len(artist) > 0:
