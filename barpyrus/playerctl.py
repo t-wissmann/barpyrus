@@ -3,6 +3,7 @@ import html
 from barpyrus.widgets import Widget
 from barpyrus.core import EventInput, Painter
 import barpyrus.colors
+import subprocess
 
 class PlayerctlFollow(EventInput):
     def __init__(self, playerctl_prefix, variables):
@@ -44,6 +45,7 @@ class Playerctl(Widget):
         if player is not None:
             playerctl_prefix.append('--player=' + player)
         variables = [
+            'playerName',
             'artist',
             'title',
             'status',
@@ -52,19 +54,22 @@ class Playerctl(Widget):
             'xesam:title',
         ]
         self.playerctl = PlayerctlFollow(playerctl_prefix, variables)
+        # save the command without --player, because we take the player
+        # name from the most recent output of 'playerctl metadata'
+        self.playerctl_command = [playerctl]
 
     def __getitem__(self, key):
         return self.playerctl.values.get(key, '')
 
-    def prev(self, button):
-        print("PREV")
-
-    def next(self, button):
-        print("NEXT")
-
-    def playpause(self, button):
-        # print("playpause")
-        pass
+    def call(self, *command):
+        # always send commands to the player whose status is displayed:
+        playerName = self.playerctl['playerName']
+        if len(playerName) > 0:
+            playerArg = ['--player=' + playerName]
+        else:
+            playerArg = []
+        full_cmd = self.playerctl_command + playerArg + list(command)
+        subprocess.call(full_cmd)
 
     def render(self, p):
         # music_notes = [
@@ -85,20 +90,18 @@ class Playerctl(Widget):
         title = title[0:30]
         # buttons don't work correctly
         # in the centered area of lemonbar-xft
-        # with p.clickable(1, self.prev):
-        #     p.fg(barpyrus.colors.PURPLE_DARK)
-        #     p.symbol(0xe096)  # prev icon
-        #     p += ' '
+        with p.clickable(1, lambda b: self.call('previous')):
+            p.fg(barpyrus.colors.PURPLE_DARK)
+            p.symbol(0xe096)  # prev icon
         p.fg(barpyrus.colors.PURPLE_DARK)
-        with p.clickable(1, self.playpause):
+        with p.clickable(1, lambda b: self.call('play-pause')):
             if self['status'] == 'Playing':
                 p.symbol(0xe059)  # Pause icon
             else:
                 p.symbol(0xe058)  # Play icon
-            p += ' '
-        # with p.clickable(1, self.next):
-        #     p.symbol(0xe09c)  # next icon
-        #     p += ' '
+        with p.clickable(1, lambda b: self.call('next')):
+            p.symbol(0xe09c)  # next icon
+        p += ' '
         p.fg(barpyrus.colors.GRAY_LIGHT)
         p.fg(barpyrus.colors.GREEN_LIGHT)
         if len(artist) > 0:
