@@ -4,7 +4,7 @@ import os.path
 
 __author__ = "Thorsten Wißmann"
 __copyright__ = "Copyright 2016 Thorsten Wißmann"
-__license__ = "GPL"
+__license__ = "Simplified BSD"
 __maintainer__ = __author__
 __email__ = "edu@thorsten-wissmann.de"
 __version_info__ = (0, 1, 0)

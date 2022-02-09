@@ -173,6 +173,15 @@ class Painter:
     def widget(self, widget):
         widget.render_themed(self)
 
+    @contextlib.contextmanager
+    def clickable(self, buttons, callback):
+        if isinstance(buttons, int):
+            buttons = [buttons]
+        click = Painter.Clickable(buttons, None, callback)
+        self._enter_clickable(click)
+        yield
+        self._exit_clickable(click)
+
     # draw the start of a clickable area
     def _enter_clickable(self, clickable):
         pass

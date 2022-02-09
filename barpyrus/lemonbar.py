@@ -17,8 +17,13 @@ class Lemonbar(EventInput):
                  symbol_vert_offset=None,
                  background = '#ee121212',
                  foreground = '#989898',
+                 spacing_font=(1, '-*-*-*-*-*-*-2-*-*-*-*-*-*-*'),
                  lemonbar_old_percent_escapes = False,
                  args = []):
+        """
+        the spacing_font=(n,font) is a font for which the space character
+        has the width of n pixels
+        """
         # since https://github.com/LemonBoy/bar/commit/1411d260a4c6956ff5a3699ee9bfd5b275209fe3
         # lemonbar handles the escaping of % symbols correctly. If you have an
         # old lemonbar installation, you must set
@@ -37,7 +42,8 @@ class Lemonbar(EventInput):
         command += [ '-f', font  ]
         if symbol_vert_offset is not None:
             command += [ '-o 0' ]
-        command += '-f -*-*-*-*-*-*-2-*-*-*-*-*-*-*'.split(' ')
+        command += ['-f', spacing_font[1]]
+        self.spacing_font_width = spacing_font[0]
         if symbol_font != None:
             if symbol_vert_offset is not None:
                 command += [ '-o -%d' % symbol_vert_offset ]
@@ -65,6 +71,7 @@ class Lemonbar(EventInput):
             super(Lemonbar.LBPainter,self).__init__()
             self.buf = ""
             self.lemonbar = lemonbar
+            self.next_click_id = 0
         def drawRaw(self, text):
             self.buf += text
         def text(self, text):
@@ -94,11 +101,17 @@ class Lemonbar(EventInput):
         def __str__(self):
             return self.buf
         def space(self, width):
-            self.buf += '%{T2}' + (' ' * width) + '%{T-}'
+            if hasattr(self.lemonbar, 'spacing_font_width'):
+                factor = self.lemonbar.spacing_font_width
+            else:
+                factor = 1
+            self.buf += '%{T2}' + (' ' * int(width / factor)) + '%{T-}'
         def _enter_clickable(self, clickable):
+            click_id = self.next_click_id
+            self.next_click_id += 1
             for b in clickable.buttons:
-                clickname = str(id(clickable.obj)) + '_' + str(b)
-                self.buf += '%%{A%d:%s:}' % (b,clickname)
+                clickname = f'{click_id}_{b}'
+                self.buf += '%%{A%d:%s:}' % (b, clickname)
                 self.lemonbar.clickareas[clickname] = (clickable.callback, b)
         def _exit_clickable(self, clickable):
             for b in clickable.buttons:

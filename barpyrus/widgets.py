@@ -84,6 +84,14 @@ class Widget:
         if self.buttons:
             painter._exit_clickable(clickable)
 
+    def print_widget_tree(self, indent='', file=sys.stderr):
+        print('{}- Widget "{}" has {} subwidgets'
+              .format(indent, type(self).__name__, len(self.subwidgets)),
+              file=file)
+        for sub in self.subwidgets:
+            sub.print_widget_tree(indent=(indent + '  '), file=file)
+
+
 class RawLabel(Widget):
     def __init__(self,label):
         super(RawLabel,self).__init__()
