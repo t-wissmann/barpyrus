@@ -18,20 +18,18 @@ class Xrandr:
         for line in proc.stdout.decode().splitlines():
             s = line.split(" ")
             if s[1] == "connected":
-                output, state, mode = s[0], s[1], None
+                output = s[0]
                 for index, x in enumerate(s[2:], 2):
                     if "x" in x and "+" in x:
-                        mode = x
                         active_layout.append(output)
-                        infos = line[line.find(s[index + 1]) :]
                         break
                     elif "(" in x:
                         break
                 self.connected.append(output)
             elif s[1] == "disconnected":
-                output, state = s[0], s[1]
+                output = s[0]
                 self.disconnected.append(output)
-    
+
         if self.active_layout is None:
             self.active_layout = self.active_mode.join(tuple(active_layout))
         return self.connected
@@ -49,15 +47,16 @@ class Xrandr:
                     else:
                         combinations_map[string] = (comb, mode)
                     available.add(string)
- 
+
         self.available_combinations = collections.deque(available)
         self.combinations_map = combinations_map
 
         return self.available_combinations
-    
+
     def choose_what_to_display(self):
         for _ in range(len(self.available_combinations)):
-            if self.displayed is None and self.available_combinations[0] == self.active_layout:
+            if self.displayed is None and \
+               self.available_combinations[0] == self.active_layout:
                 self.displayed = self.available_combinations[0]
                 break
             elif self.displayed == self.available_combinations[0]:
@@ -75,11 +74,12 @@ class Xrandr:
         if self.displayed == self.active_layout:
             return
 
-        combination, mode = self.combinations_map.get(self.displayed, (None, None))
+        combination, mode = self.combinations_map.get(
+                                self.displayed, (None, None))
 
         if combination is None and mode is None:
-        # displayed combination cannot be activated, ignore
-          return
+            # displayed combination cannot be activated, ignore
+            return
 
         cmd = "xrandr"
         outputs = self.connected
@@ -121,9 +121,8 @@ class Xrandr:
         print(button)
 
         if button == 1:
-          print("before %s", self.available_combinations[0])
-          self.switch_selection()
-          print("after %s", self.available_combinations[0])
+            print("before %s", self.available_combinations[0])
+            self.switch_selection()
+            print("after %s", self.available_combinations[0])
         elif button == 3:
             self.apply()
-
