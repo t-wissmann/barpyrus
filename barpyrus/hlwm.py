@@ -44,13 +44,19 @@ class HLWMInput(EventInput):
         if args[0] in self.hooks:
             for cb in self.hooks[args[0]]:
                 cb(args[1:])
-    def __call__(self,args):
+
+    def __call__(self, args, check=True):
         cmd = [ "herbstclient", "-n" ]
         cmd += args;
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-        proc.wait()
-        return proc.stdout.read().decode("utf-8")
-    def monitor_rect(hc, monitor = None):
+        exit_code = proc.wait()
+        stdout = proc.stdout.read().decode()
+        if check:
+            assert exit_code == 0, \
+                f'Error: command {args} exited with non-success code {exit_code} (and stdout "{stdout}")'
+        return stdout
+
+    def monitor_rect(hc, monitor=None):
         if monitor == None:
             if len(sys.argv) >= 2:
                 monitor = int(sys.argv[1])
