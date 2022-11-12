@@ -247,7 +247,7 @@ class HLWMTags(Widget):
 
 class HLWMWindowTitle(Label):
     def __init__(self, hlwm, maxlen = -1):
-        self.windowtitle = hlwm(['attr', 'clients.focus.title'])
+        self.windowtitle = hlwm(['attr', 'clients.focus.title'], check=False)
         self.maxlen = maxlen
         super(HLWMWindowTitle,self).__init__('')
         self.buttons = [4 , 5]
