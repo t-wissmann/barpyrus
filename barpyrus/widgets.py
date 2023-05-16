@@ -2,6 +2,7 @@
 
 import subprocess
 import time
+import datetime
 import sys
 import select
 import os
@@ -132,14 +133,32 @@ class Button(Widget):
 
 
 class DateTime(Label):
-    def __init__(self,time_format = '%H:%M, %Y-%m-%d'):
+    """
+    This is a label widget that displays the current date/time
+    in the specified format. The optional parameter 'timezone'
+    expects the string representation of a timezone (e.g.
+    'Europe/Berlin'), and requires that the pytz library is installed.
+    """
+    def __init__(self, time_format = '%H:%M, %Y-%m-%d', timezone=None):
         super(DateTime,self).__init__('')
         self.timer_interval = 1
         self.time_format = time_format
         self.last_time = ''
+        self.tz_name = timezone
+        self.tz = None
+        if self.tz_name:
+            # if tz_name is provided, we need the 'pytz' library:
+            import pytz
+            self.tz = pytz.timezone(self.tz_name)
+        # set label
         self.timeout()
+
     def timeout(self):
-        self.label = time.strftime(self.time_format)
+        if self.tz:
+            t = datetime.datetime.now(self.tz)
+        else:
+            t = datetime.datetime.now()
+        self.label = t.strftime(self.time_format)
         if_changed = (self.label != self.last_time)
         self.last_time = self.label
         return if_changed
