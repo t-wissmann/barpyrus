@@ -12,10 +12,17 @@ some example configuratons in the `share/` directory.
 You need to have the following things installed:
 
 - [lemonbar](https://github.com/lemonboy/bar)
-- [siji font](https://github.com/stark/siji)
-- [herbstluftwm](https://github.com/herbstluftwm/herbstluftwm)
-- conky (only if you want to use the conky widget)
-- setuptools if installing via `setup.py`
+
+Optional:
+
+- [siji font](https://github.com/stark/siji) (default `symbol_font` used)
+- [herbstluftwm](https://github.com/herbstluftwm/herbstluftwm) (for the `hlwm` integration)
+- conky (to use the conky widget)
+- setuptools (if installing via `setup.py`)
+- pytz (if using `tz_name` for `widgets.DateTime`)
+- python-xlib (to use the `trayer` integration)
+- trayer (to use the `trayer` integration)
+- playerctl (to use the `playerctl` integration)
 
 ## Usage in herbstluftwm
 To install it type:
