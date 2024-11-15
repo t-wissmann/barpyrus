@@ -20,13 +20,17 @@ class PlayerctlFollow(EventInput):
         self.values = {}
 
     def parse_line(self, line):
-        fields = line.split('<>')
-        if len(fields) != len(self.variables):
-            print("Error: requested {} fields from playerctl but obtained {} fields"
-                  .format(len(fields), len(self.variables)),
-                  file=sys.stderr)
-        for key, value in zip(self.variables, fields):
-            self.values[key] = html.unescape(value)
+        if line == '':
+            # clear all metadata on empty line
+            self.values = { key: '' for key in self.variables }
+        else:
+            fields = line.split('<>')
+            if len(fields) != len(self.variables):
+                print("Error: requested {} fields from playerctl but obtained {} fields"
+                      .format(len(self.variables), len(fields)),
+                      file=sys.stderr)
+            for key, value in zip(self.variables, fields):
+                self.values[key] = html.unescape(value)
 
     def __getitem__(self, key):
         return self.values.get(key, '')
@@ -50,6 +54,7 @@ class Playerctl(Widget):
             'title',
             'status',
             'album',
+            'mpris:trackid',
             'xesam:artist',
             'xesam:title',
         ]
@@ -71,6 +76,9 @@ class Playerctl(Widget):
         full_cmd = self.playerctl_command + playerArg + list(command)
         subprocess.call(full_cmd)
 
+    def is_empty(self):
+        return self.playerctl['playerName'] == ''
+
     def render(self, p):
         # music_notes = [
         #     0xe270,
@@ -80,6 +88,8 @@ class Playerctl(Widget):
         # ]
         # p.fg(barpyrus.colors.GRAY_LIGHT)
         # p.symbol(music_notes[1])
+        if self.playerctl['playerName'] == '':
+            return
         artist = self.playerctl['artist']
         if len(artist) == 0:
             artist = self.playerctl['xesam:artist']

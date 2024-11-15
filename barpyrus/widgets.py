@@ -51,8 +51,10 @@ class Widget:
             #print("timeout for " + str(self))
             some_timeout = self.timeout() or some_timeout
         return some_timeout
+
     def render(self, painter):
         painter += 'widget'
+
     def can_handle_input(self, click_id, btn):
         for w in self.subwidgets:
             if w.can_handle_input(click_id, btn):
@@ -64,6 +66,10 @@ class Widget:
             return False
     def on_click(self, button):
         pass
+
+    def is_empty(self):
+        """tell, whether the widget has empty contents"""
+        return False
 
     def render_themed(self,painter):
         clickable = None
@@ -212,13 +218,27 @@ class Switcher(Widget):
         p.set_flag(p.overline | p.underline, False)
 
 class StackedLayout(Widget):
-    def __init__(self, widgets, selection=0):
+    """Switch between multiple widgets. If the selected widget is_empty(), then
+    the first non-empty next is shown instead."""
+    def __init__(self, widgets, selection=0, find_nonempty=True):
         super(StackedLayout,self).__init__()
         self.widgets = widgets
         self.selection = selection
         self.subwidgets += widgets
+        self.find_nonempty = find_nonempty
+
     def render(self,painter):
-        painter.widget(self.widgets[self.selection])
+        # starting at the current selection, find the first non-empty widget:
+        first_nonempty = self.selection
+        if self.find_nonempty:
+            count = len(self.widgets)
+            for i in range(0, count):
+                abs_idx = (self.selection +  i) % count
+                if not self.widgets[abs_idx].is_empty():
+                    first_nonempty = abs_idx
+                    break
+        painter.widget(self.widgets[abs_idx])
+
     def can_handle_input(self, click_id, btn):
         return self.widgets[self.selection].can_handle_input(click_id, btn)
 
@@ -232,17 +252,21 @@ class TabbedLayout(StackedLayout):
         if tab_renderer != None:
             self.tab_label.custom_render = tab_renderer
         self.tab_label.callback = lambda buttonnr: self.on_click()
+
     def on_click(self):
         self.selection += 1
         self.selection %= len(self.tabs)
         self.tab_label.label = self.tabs[self.selection][0]
+
     def can_handle_input(self, click_id, btn):
         if self.tab_label.can_handle_input(click_id, btn):
             return True
         return super(TabbedLayout,self).can_handle_input(click_id, btn)
+
     def render(self,painter):
         painter.widget(self.tab_label)
         super(TabbedLayout,self).render(painter)
+
 
 class ShortLongLayout(TabbedLayout):
     def __init__(self, shortwidget, longwidget, longdefault = False):
